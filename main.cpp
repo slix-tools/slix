@@ -17,6 +17,9 @@
 
 #include "fsx/Reader.h"
 
+template<class... Ts>
+struct overloaded : Ts... { using Ts::operator()...; };
+
 struct Node {
     std::unordered_map<std::string, Node> children;
 
@@ -295,18 +298,6 @@ struct GarFuse {
         std::cout << "read link: " << targetBuf << " " << entry->file_offset << " " << entry->header.size << " " << ct << "\n";
         return 0;
     }
-    int mknod_callback(char const* path, mode_t m, dev_t d) {
-        return -ENOENT;
-    }
-    int mkdir_callback(char const* path, mode_t m) {
-        return -ENOENT;
-    }
-    int symlink_callback(char const* path, char const* target) {
-        return -ENOENT;
-    }
-    int rename_callback(char const* path, char const* target) {
-        return -ENOENT;
-    }
     int open_callback(char const* path, fuse_file_info* fi) {
         auto entry = findEntry(path);
         std::cout << "open: " << path << " " << (bool)entry << "\n";
@@ -334,19 +325,6 @@ struct GarFuse {
         std::cout << "read " << path << " " << size << " " << dataread << " " << offset << "\n";
         return dataread;*/
     }
-    int write_callback(char const* path, char const* buf, size_t size, off_t offset, fuse_file_info* fi) {
-        return -ENOENT;
-    }
-    int release_callback(char const* path, fuse_file_info* fi) {
-        std::cout << "release: " << path << "\n";
-        return -ENOENT;
-/*        auto node = tree.findPath(path);
-        if (!node) return -ENOENT;
-
-        close(fi->fh);
-        return 0;*/
-    }
-
     int readdir_callback(char const* path, void* buf, fuse_fill_dir_t filler, std::unordered_set<std::string>& satisfiedFiles) {
         auto entry = findEntry(path);
         std::cout << "readdir: " << path << " " << (bool)entry << "\n";
@@ -473,60 +451,26 @@ struct MyFuse {
     }
 
 
-    int getattr_callback(char const* path, struct stat* stbuf) {
-        return any_callback([&](auto& fs) {
-            return fs.getattr_callback(path, stbuf);
-        });
-    }
-
-    int readlink_callback(char const* path, char* targetBuf, size_t size) {
-        return any_callback([&](auto& fs) {
-            return fs.readlink_callback(path, targetBuf, size);
-        });
-    }
-    int mknod_callback(char const* path, mode_t m, dev_t d) {
-        return any_callback([&](auto& fs) {
-            return fs.mknod_callback(path, m, d);
-        });
-    }
-    int mkdir_callback(char const* path, mode_t m) {
-        return any_callback([&](auto& fs) {
-            return fs.mkdir_callback(path, m);
-        });
-    }
-    int symlink_callback(char const* path, char const* target) {
-        return any_callback([&](auto& fs) {
-            return fs.symlink_callback(path, target);
-        });
-    }
-    int rename_callback(char const* path, char const* target) {
-        return any_callback([&](auto& fs) {
-            return fs.rename_callback(path, target);
-        });
-    }
-    int open_callback(char const* path, fuse_file_info* fi) {
-        return any_callback([&](auto& fs) {
-            return fs.open_callback(path, fi);
-        });
-    }
-
-    int read_callback(char const* path, char* buf, size_t size, off_t offset, fuse_file_info* fi) {
-        return any_callback([&](auto& fs) {
-            return fs.read_callback(path, buf, size, offset, fi);
-        });
-    }
-
-    int write_callback(char const* path, char const* buf, size_t size, off_t offset, fuse_file_info* fi) {
-        return any_callback([&](auto& fs) {
-            return fs.write_callback(path, buf, size, offset, fi);
-        });
-    }
-
-    int release_callback(char const* path, fuse_file_info* fi) {
-        return any_callback([&](auto& fs) {
-            return fs.release_callback(path, fi);
-        });
-    }
+    #define fwd_callback(name) \
+        template <typename ...Args> \
+        int name(Args&&... args) { \
+            return any_callback([&](auto& fs) -> int { \
+                if constexpr (requires { fs.name(std::forward<Args>(args)...); }) { \
+                    return fs.name(std::forward<Args>(args)...); \
+                } \
+                return -ENOENT; \
+            }); \
+        }
+    fwd_callback(getattr_callback)
+    fwd_callback(readlink_callback)
+    fwd_callback(mknod_callback)
+    fwd_callback(mkdir_callback)
+    fwd_callback(symlink_callback)
+    fwd_callback(rename_callback)
+    fwd_callback(open_callback)
+    fwd_callback(read_callback)
+    fwd_callback(write_callback)
+    fwd_callback(release_callback)
 
     int readdir_callback(char const* path, void* buf, fuse_fill_dir_t filler) {
         auto satisfiedFiles = std::unordered_set<std::string>{};
