@@ -171,10 +171,15 @@ struct FileFuse {
         if (!tpn) return -ENOENT;
 
         auto r = rename(real_path(path).c_str(), real_path(target).c_str());
+
+        std::cout << "real move: " << real_path(path) << " -> " << real_path(target) << "\n";
+
+        std::cout << "parents: " << path_.parent_path() << " -> " << target_.parent_path() << "\n";
+        std::cout << "filename: " << path_.filename() << " -> " << target_.filename() << "\n";
         // we lost the original name
-        auto en = pn->children.extract(path_.filename());
-        tpn->children.erase(target_.filename());
-        tpn->children.insert(std::move(en));
+        auto en = pn->children.at(path_.filename());
+        pn->children.erase(path_.filename());
+        tpn->children[target_.filename()] = std::move(en);
         return r;
     }
     int chmod_callback(char const* path, mode_t m) {
@@ -285,7 +290,7 @@ struct GarFuse {
 
     int getattr_callback(char const* path, struct stat* stbuf) {
         auto entry = findEntry(path);
-        std::cout << "gar - getattr: " << path << " " << (bool)entry << "\n";
+        //std::cout << "gar - getattr: " << path << " " << (bool)entry << "\n";
         if (!entry) return -ENOENT;
         auto const& [h, name, offset] = *entry;
 
@@ -346,14 +351,14 @@ struct GarFuse {
     }
     int readdir_callback(char const* path, void* buf, fuse_fill_dir_t filler, std::unordered_set<std::string>& satisfiedFiles) {
         auto entry = findEntry(path);
-        std::cout << "readdir: " << path << " " << (bool)entry << "\n";
+        //std::cout << "readdir: " << path << " " << (bool)entry << "\n";
         if (!entry) return -ENOENT;
         auto const& [h, name, offset] = *entry;
         if (h.type != 1) return -ENOENT;
 
         auto fpath = std::string_view{path};
 
-        std::cout << "listing: " << path << " " << fpath << "\n";
+        //std::cout << "listing: " << path << " " << fpath << "\n";
         for (auto const& s : entries) {
             if (s.first.starts_with(fpath) && s.first.size() > fpath.size() + 1) {
                 auto pos = s.first.find('/', fpath.size()+1);
@@ -362,7 +367,7 @@ struct GarFuse {
                 auto child_name = std::filesystem::path{s.first}.lexically_proximate(fpath).string();
                 if (!satisfiedFiles.contains(child_name)) {
                     satisfiedFiles.emplace(child_name);
-                    std::cout << " - child: " << child_name << "\n";
+          //          std::cout << " - child: " << child_name << "\n";
                     filler(buf, child_name.c_str(), nullptr, 0);
                 }
             }
