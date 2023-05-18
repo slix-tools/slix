@@ -12,13 +12,17 @@ void addFolder(std::filesystem::path const& _path, std::filesystem::path const& 
     }
 }
 
-int main() {
-    auto garFile = std::filesystem::path{"minimal-bash.gar"};
-    auto wfs = fsx::Writer{garFile};
-    addFolder("minimal-bash", ".", wfs);
+int main(int argc, char** argv) {
+    if (argc != 2) {
+        std::cout << "invalid call\n";
+        return 0;
+    }
+    auto path = std::filesystem::path{argv[1]};
+    auto wfs = fsx::Writer{path.string() + ".gar"};
+    addFolder(path, path, wfs);
     wfs.close();
 
-    auto rfs = fsx::Reader{garFile};
+    auto rfs = fsx::Reader{path.string() + ".gar"};
 
     for (auto entry = rfs.readNext(); entry; entry = rfs.readNext()) {
         auto const& [header, name, offset] = *entry;
