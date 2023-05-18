@@ -86,7 +86,7 @@ struct FileFuse {
 
     int getattr_callback(char const* path, struct stat* stbuf) {
         auto node = tree.findPath(path);
-        std::cout << "ff, getattr: " << path << " -> " << real_path(path) << " " << (bool)node << "\n";
+        //std::cout << "ff, getattr: " << path << " -> " << real_path(path) << " " << (bool)node << "\n";
         if (!node) return -ENOENT;
 
         auto r = lstat(real_path(path).c_str(), stbuf);
@@ -143,6 +143,35 @@ struct FileFuse {
         std::cout << "creating " << path << " at " << real_path(path) << "\n";
         return mkdir(real_path(path).c_str(), m);
     }
+    int unlink_callback(char const* path) {
+        if (!writable) return -ENOENT;
+        std::cout << "unlink for " << path << "\n";
+
+        auto path_ = std::filesystem::path{path};
+
+        auto pn = tree.findPath(path_.parent_path());
+        if (!pn) return -ENOENT;
+        auto r = unlink(real_path(path_).c_str());
+        if (r == 0) {
+            pn->children.erase(path_.filename().string());
+        }
+        return r;
+    }
+    int rmdir_callback(char const* path) {
+        if (!writable) return -ENOENT;
+        std::cout << "rmdir for " << path << "\n";
+
+        auto path_ = std::filesystem::path{path};
+
+        auto pn = tree.findPath(path_.parent_path());
+        if (!pn) return -ENOENT;
+        auto r = rmdir(real_path(path_).c_str());
+        if (r == 0) {
+            pn->children.erase(path_.filename().string());
+        }
+        return r;
+    }
+
     int symlink_callback(char const* path, char const* target) {
         if (!writable) return -ENOENT;
         std::cout << "symlink for " << path << "\n";
@@ -205,9 +234,22 @@ struct FileFuse {
             }
         }
 
-        auto fd = open(real_path(path).c_str(), fi->flags);
+        auto path_ = std::filesystem::path{path};
+        if (fi->flags & O_WRONLY || fi->flags & O_RDWR) {
+            auto parent = path_.parent_path();
+
+            if (!std::filesystem::is_directory(real_path(parent))) {
+                auto dm = S_IXOTH | S_IROTH |
+                          S_IXGRP | S_IRGRP |
+                          S_IRWXU;
+                auto r = mkdir_callback(parent.c_str(), dm);
+                if (r == -ENOENT) return -ENOENT;
+            }
+        }
+
+        auto fd = open(real_path(path_).c_str(), fi->flags);
         fi->fh = fd;
-        std::cout << "open " << path << "\n";
+        std::cout << "open " << path_ << "\n";
         return 0;
     }
 
@@ -229,6 +271,7 @@ struct FileFuse {
     int release_callback(char const* path, fuse_file_info* fi) {
         auto node = tree.findPath(path);
         if (!node) return -ENOENT;
+        std::cout << "release for " << path << "\n";
 
         close(fi->fh);
         return 0;
@@ -250,6 +293,20 @@ struct FileFuse {
         std::cout << "trying to read " << path << "\n";
         return 0;
     }
+    int lock_callback(char const* path, fuse_file_info* fi, int cmd, flock* l) {
+        if (!writable) return -ENOENT;
+        std::cout << "lock for " << path << " cmd: ";
+        if (cmd == F_GETLK) std::cout << "F_GETLK";
+        if (cmd == F_SETLK) std::cout << "F_SETLK";
+        if (cmd == F_SETLKW) std::cout << "F_SETLKW";
+        std::cout << "\n";
+
+        auto node = tree.findPath(path);
+        if (!node) return -ENOENT;
+
+        return fcntl(fi->fh, cmd);
+    }
+
     int utimens_callback(char const* path, struct timespec const tv[2]) {
         std::cout << "trying to set time for: " << path << "\n";
         if (!writable) return -ENOENT;
@@ -312,7 +369,7 @@ struct GarFuse {
 
     int readlink_callback(char const* path, char* targetBuf, size_t size) {
         auto entry = findEntry(path);
-        std::cout << "readlink: " << path << " " << (bool)entry << "\n";
+ //       std::cout << "readlink: " << path << " " << (bool)entry << "\n";
         if (!entry) return -ENOENT;
         auto const& [h, name, offset] = *entry;
         if (h.type != 2) return -ENOENT;
@@ -325,7 +382,7 @@ struct GarFuse {
     }
     int open_callback(char const* path, fuse_file_info* fi) {
         auto entry = findEntry(path);
-        std::cout << "open: " << path << " " << (bool)entry << "\n";
+//        std::cout << "open: " << path << " " << (bool)entry << "\n";
         if (!entry) return -ENOENT;
         auto const& [h, name, offset] = *entry;
         if (h.type != 0) return -ENOENT;
@@ -334,7 +391,7 @@ struct GarFuse {
 
     int read_callback(char const* path, char* buf, size_t size, off_t offset_, fuse_file_info* fi) {
         auto entry = findEntry(path);
-        std::cout << "read: " << path << " " << (bool)entry << "\n";
+//        std::cout << "read: " << path << " " << (bool)entry << "\n";
         if (!entry) return -ENOENT;
         auto const& [h, name, offset] = *entry;
         if (h.type != 0) return -ENOENT;
@@ -425,6 +482,8 @@ struct MyFuse {
             .readlink = [](char const* path, char* targetBuf, size_t size) { return self().readlink_callback(path, targetBuf, size); },
             .mknod    = [](char const* path, mode_t m, dev_t d) { return self().mknod_callback(path, m, d); },
             .mkdir    = [](char const* path, mode_t m) { return self().mkdir_callback(path, m); },
+            .unlink   = [](char const* path) { return self().unlink_callback(path); },
+            .rmdir    = [](char const* path) { return self().rmdir_callback(path); },
             .symlink  = [](char const* path, char const* target) { return self().symlink_callback(path, target); },
             .rename   = [](char const* path, char const* target) { return self().rename_callback(path, target); },
             .chmod    = [](char const* path, mode_t m) { return self().chmod_callback(path, m); },
@@ -435,6 +494,7 @@ struct MyFuse {
             .write    = [](char const* path, char const* buf, size_t size, off_t offset, fuse_file_info* fi) { return self().write_callback(path, buf, size, offset, fi); },
             .release  = [](char const* path, fuse_file_info* fi) { return self().release_callback(path, fi); },
             .readdir  = [](char const* path, void* buf, fuse_fill_dir_t filler, off_t, fuse_file_info*) { return self().readdir_callback(path, buf, filler); },
+            .lock     = [](char const* path, fuse_file_info* fi, int cmd, flock* l) { return self().lock_callback(path, fi, cmd, l); },
             .utimens  = [](char const* path, struct timespec const tv[2]) { return self().utimens_callback(path, tv); }
             //.access   = [](char const* path, int mask) { std::cout << "access: " << path << "\n"; if (auto res = access(path, mask); res == -1) return -errno; return 0; },
 //            .read_buf = [](char const* path, fuse_bufvec** bufp, size_t size, off_t offset, fuse_file_info* fi) { return self().read_buf_callback(path, bufp, size, offset, fi); },
@@ -481,18 +541,22 @@ struct MyFuse {
 
     #define fwd_callback(name) \
         template <typename ...Args> \
-        int name(Args&&... args) { \
-            return any_callback([&](auto& fs) -> int { \
-                if constexpr (requires { fs.name(std::forward<Args>(args)...); }) { \
-                    return fs.name(std::forward<Args>(args)...); \
+        int name(char const* path, Args&&... args) { \
+            auto r = any_callback([&](auto& fs) -> int { \
+                if constexpr (requires { fs.name(path, std::forward<Args>(args)...); }) { \
+                    return fs.name(path, std::forward<Args>(args)...); \
                 } \
                 return -ENOENT; \
             }); \
+            std::cout << #name << " path: " << path << " " << r << "\n"; \
+            return r; \
         }
     fwd_callback(getattr_callback)
     fwd_callback(readlink_callback)
     fwd_callback(mknod_callback)
     fwd_callback(mkdir_callback)
+    fwd_callback(unlink_callback)
+    fwd_callback(rmdir_callback)
     fwd_callback(symlink_callback)
     fwd_callback(rename_callback)
     fwd_callback(chmod_callback)
@@ -514,6 +578,7 @@ struct MyFuse {
         }
         return 0;
     }
+    fwd_callback(lock_callback)
     fwd_callback(utimens_callback)
 };
 
