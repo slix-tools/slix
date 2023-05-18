@@ -245,6 +245,12 @@ struct FileFuse {
         std::cout << "trying to read " << path << "\n";
         return 0;
     }
+    int utimens_callback(char const* path, struct timespec const tv[2]) {
+        if (!writable) return -ENOENT;
+        auto node = tree.findPath(path);
+        if (!node) return -ENOENT;
+        return utimensat(AT_FDCWD, path, tv, 0);
+    }
 };
 
 struct GarFuse {
@@ -423,6 +429,7 @@ struct MyFuse {
             .write    = [](char const* path, char const* buf, size_t size, off_t offset, fuse_file_info* fi) { return self().write_callback(path, buf, size, offset, fi); },
             .release  = [](char const* path, fuse_file_info* fi) { return self().release_callback(path, fi); },
             .readdir  = [](char const* path, void* buf, fuse_fill_dir_t filler, off_t, fuse_file_info*) { return self().readdir_callback(path, buf, filler); },
+            .utimens  = [](char const* path, struct timespec const tv[2]) { return self().utimens_callback(path, tv); }
             //.access   = [](char const* path, int mask) { std::cout << "access: " << path << "\n"; if (auto res = access(path, mask); res == -1) return -errno; return 0; },
 //            .read_buf = [](char const* path, fuse_bufvec** bufp, size_t size, off_t offset, fuse_file_info* fi) { return self().read_buf_callback(path, bufp, size, offset, fi); },
 //            .lseek    = [](char const* path, off_t off, int whence) -> off_t { std::cout << "lseek not implemented: " << path << "\n"; return 0; },
@@ -488,7 +495,6 @@ struct MyFuse {
     fwd_callback(read_callback)
     fwd_callback(write_callback)
     fwd_callback(release_callback)
-
     int readdir_callback(char const* path, void* buf, fuse_fill_dir_t filler) {
         auto satisfiedFiles = std::unordered_set<std::string>{};
         for (auto& fs : nodes) {
@@ -500,9 +506,9 @@ struct MyFuse {
         for (auto s : satisfiedFiles) {
             std::cout << "  " << s << "\n";
         }
-
         return 0;
     }
+    fwd_callback(utimens_callback)
 };
 
 std::atomic_bool finish{false};
