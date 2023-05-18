@@ -177,6 +177,19 @@ struct FileFuse {
         tpn->children.insert(std::move(en));
         return r;
     }
+    int chmod_callback(char const* path, mode_t m) {
+        if (!writable) return -ENOENT;
+        auto node = tree.findPath(path);
+        if (!node) return -ENOENT;
+        return chmod(real_path(path).c_str(), m);
+    }
+    int chown_callback(char const* path, uid_t uid, gid_t gid) {
+        if (!writable) return -ENOENT;
+        auto node = tree.findPath(path);
+        if (!node) return -ENOENT;
+        return chown(path, uid, gid);
+    }
+
     int open_callback(char const* path, fuse_file_info* fi) {
         auto node = tree.findPath(path);
         if (!node) return -ENOENT;
@@ -402,6 +415,8 @@ struct MyFuse {
             .mkdir    = [](char const* path, mode_t m) { return self().mkdir_callback(path, m); },
             .symlink  = [](char const* path, char const* target) { return self().symlink_callback(path, target); },
             .rename   = [](char const* path, char const* target) { return self().rename_callback(path, target); },
+            .chmod    = [](char const* path, mode_t m) { return self().chmod_callback(path, m); },
+            .chown    = [](char const* path, uid_t uid, gid_t gid) { return self().chown_callback(path, uid, gid); },
             .truncate = [](char const* path, off_t offset) -> int { std::cout << "truncate " << path << " " << offset << "\n"; return 0; },
             .open     = [](char const* path, fuse_file_info* fi) { return self().open_callback(path, fi); },
             .read     = [](char const* path, char* buf, size_t size, off_t offset, fuse_file_info* fi) { return self().read_callback(path, buf, size, offset, fi); },
@@ -467,6 +482,8 @@ struct MyFuse {
     fwd_callback(mkdir_callback)
     fwd_callback(symlink_callback)
     fwd_callback(rename_callback)
+    fwd_callback(chmod_callback)
+    fwd_callback(chown_callback)
     fwd_callback(open_callback)
     fwd_callback(read_callback)
     fwd_callback(write_callback)
