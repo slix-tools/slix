@@ -251,10 +251,11 @@ struct FileFuse {
         return 0;
     }
     int utimens_callback(char const* path, struct timespec const tv[2]) {
+        std::cout << "trying to set time for: " << path << "\n";
         if (!writable) return -ENOENT;
         auto node = tree.findPath(path);
         if (!node) return -ENOENT;
-        return utimensat(AT_FDCWD, path, tv, 0);
+        return utimensat(AT_FDCWD, real_path(path).c_str(), tv, 0);
     }
 };
 
