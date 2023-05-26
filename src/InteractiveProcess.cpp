@@ -117,9 +117,9 @@ private:
         auto envp = std::vector<char const*>{};
         auto path = std::filesystem::current_path();
         std::string PATH="PATH=" + path.string() + "/usr/bin";
-        std::string LIBRARY_PATH="LIBRARY_PATH=" + path.string() + "/usr/lib";
+        std::string LD_LIBRARY_PATH="LD_LIBRARY_PATH=" + path.string() + "/usr/lib";
         envp.push_back(PATH.c_str());
-        envp.push_back(LIBRARY_PATH.c_str());
+        envp.push_back(LD_LIBRARY_PATH.c_str());
         envp.push_back(nullptr);
 
         execvpe(execStr.c_str(), (char**)argv.data(), (char**)envp.data());
