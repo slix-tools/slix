@@ -7,6 +7,7 @@
 #include <csignal>
 #include <atomic>
 #include <cstring>
+#include <ranges>
 #include <thread>
 #include <unordered_map>
 #include <variant>
@@ -59,7 +60,7 @@ auto scanFolder(std::filesystem::path const& _path) -> Node {
             auto children = scanFolder(_path / name);
             node.children.try_emplace(std::move(name), std::move(children));
         } else if (dir_entry.is_regular_file()) {
-            std::cout << "adding file: " << _path / name << "\n";
+            //std::cout << "adding file: " << _path / name << "\n";
             node.children.try_emplace(std::move(name));
         } else if (dir_entry.is_symlink()) {
             node.children.try_emplace(std::move(name));
@@ -346,6 +347,8 @@ struct GarFuse {
 
     fsx::Reader reader;
 
+    std::vector<std::string> dependencies;
+
     GarFuse(std::filesystem::path rootPath_)
         : rootPath{std::move(rootPath_)}
         , reader{rootPath}
@@ -354,8 +357,27 @@ struct GarFuse {
 
         std::string rootfs = "rootfs";
         for (auto entry = reader.readNext(); entry; entry = reader.readNext()) {
+            if (entry->name == "dependencies.txt") {
+                // special list with dependencies
+                auto const& [h, name, offset] = *entry;
+                auto buffer = std::string{};
+                buffer.resize(h.size);
+                auto ct = reader.readContent(buffer.data(), buffer.size(), offset);
+                buffer.resize(ct);
+                for (auto part : std::views::split(buffer, '\n')) {
+//                for (auto part : split(buffer, '\n')) {
+                    auto v = std::string_view{&*part.begin(), part.size()};
+                    auto s = std::string(v);
+                    if (s.empty()) continue;
+                    dependencies.push_back(rootPath.parent_path() / s);
+                    std::cout << "found dependency: " << s << "\n";
+                }
+
+                std::cout << "loaded dependencies: " << buffer << "\n";
+                continue;
+            }
             auto name = entry->name.substr(rootfs.size());
-            std::cout << "adding: " << name << "\n";
+            //std::cout << "adding: " << name << "\n";
             if (name.empty()) name = "/";
             entries.try_emplace(std::move(name), std::move(*entry));
         }
@@ -633,14 +655,22 @@ int main(int argc, char** argv) {
         }
     }*/
     auto layers = std::vector<std::variant<FileFuse, GarFuse>>{};
+    auto packages = std::vector<std::string>{};
     for (size_t i{1}; i < argc-1; ++i) {
-        input.emplace_back(argv[i]);
+        packages.emplace_back(argv[i]);
+    }
+    while (!packages.empty()) {
+        auto input = std::filesystem::path{packages.back()};
+        packages.pop_back();
         std::cout << "layer " << layers.size() << "\n";
-        if (input.back().extension() == ".gar") {
-            layers.emplace_back<GarFuse>(input.back());
+        if (input.extension() == ".gar") {
+            layers.emplace_back<GarFuse>(input);
+            auto const& fuse = std::get<GarFuse>(layers.back());
+            for (auto const& d : fuse.dependencies) {
+                packages.push_back(d + ".gar");
+            }
         } else {
-            bool writable = (i == 1);
-            layers.emplace_back(FileFuse{input.back(), writable});
+            layers.emplace_back(FileFuse{input, false});
         }
     }
 
