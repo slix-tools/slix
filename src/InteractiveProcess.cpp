@@ -126,6 +126,20 @@ private:
         // Close the child side of the PTY
         close(fdc);
 
+        // clear ICANON from input fd
+        // Save the defaults parameters of the child side of the PTY
+        struct termios child_orig_term_settings; // Saved terminal settings
+        struct termios new_term_settings; // Current terminal settings
+
+        rc = tcgetattr(0, &child_orig_term_settings);
+
+        // Set RAW mode on child side of PTY
+        new_term_settings = child_orig_term_settings;
+        new_term_settings.c_lflag &= ~ICANON;
+//        cfmakeraw (&new_term_settings);
+        tcsetattr (0, TCSANOW, &new_term_settings);
+
+
         while (true) {
             // Wait for data from standard input and parent side of PTY
             FD_ZERO(&fd_in);
