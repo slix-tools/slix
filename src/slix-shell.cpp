@@ -654,12 +654,15 @@ int main(int argc, char** argv) {
     auto input = std::vector<std::filesystem::path>{};
     auto layers = std::vector<std::variant<FileFuse, GarFuse>>{};
     auto packages = std::vector<std::string>{};
+    auto addedPackages = std::unordered_set<std::string>{};
     for (size_t i{1}; i < argc; ++i) {
         packages.emplace_back(argv[i]);
     }
     while (!packages.empty()) {
         auto input = std::filesystem::path{packages.back()};
         packages.pop_back();
+        if (addedPackages.contains(input)) continue;
+        addedPackages.insert(input);
         std::cout << "layer " << layers.size() << "\n";
         if (input.extension() == ".gar") {
             layers.emplace_back<GarFuse>(input);
