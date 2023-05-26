@@ -1,5 +1,6 @@
 #include <filesystem>
 #include <vector>
+#include <functional>
 #include <fstream>
 #include <iostream>
 #include <unordered_set>
@@ -554,7 +555,6 @@ struct MyFuse {
     }
 
     ~MyFuse() {
-        fuse_unmount(mountPoint.c_str(), channel);
         fuse_destroy(fusePtr);
 
         if (tearDownMountPoint) {
@@ -562,11 +562,12 @@ struct MyFuse {
         }
     }
 
+    void close() {
+        fuse_unmount(mountPoint.c_str(), channel);
+    }
+
     void loop() {
-        auto cmd = fuse_read_cmd(fusePtr);
-        if (cmd) {
-            fuse_process_cmd(fusePtr, cmd);
-        }
+        fuse_loop(fusePtr);
     }
 
 
@@ -634,26 +635,12 @@ struct MyFuse {
 
 std::atomic_bool finish{false};
 
-static std::string gTarget;
-static std::jthread gThread;
-
 int main(int argc, char** argv) {
     if (argc < 2) {
         throw std::runtime_error{"need at least 2 parameters"};
     }
     auto input = std::vector<std::filesystem::path>{};
-    auto target = std::filesystem::path{};
-    gTarget = target = argv[argc-1];
-/*    auto layers = Nodes{};
-    for (size_t i{1}; i < argc-1; ++i) {
-        input.emplace_back(argv[i]);
-        std::cout << "layer " << layers.nodes.size() << "\n";
-        if (input.back().extension() == ".tar") {
-            layers.nodes.emplace_back(input.back(), scanTar(input.back(), -1));
-        } else {
-            layers.nodes.emplace_back(input.back(), scanFolder(input.back(), -1));
-        }
-    }*/
+    auto target = std::filesystem::path{argv[argc-1]};
     auto layers = std::vector<std::variant<FileFuse, GarFuse>>{};
     auto packages = std::vector<std::string>{};
     for (size_t i{1}; i < argc-1; ++i) {
@@ -674,16 +661,14 @@ int main(int argc, char** argv) {
         }
     }
 
+    static auto onExit = std::function<void(int)>{[](int){}};
+
     std::signal(SIGINT, [](int signal) {
         if (finish) {
             std::terminate();
         }
         finish = true;
-        gThread = std::jthread{[]() {
-            try {
-                (void)std::filesystem::is_empty(gTarget);
-            } catch(...){}
-        }};
+        onExit(signal);
     });
 
     auto extraOptions = std::vector<std::string>{};
@@ -703,8 +688,11 @@ int main(int argc, char** argv) {
     }
 
     auto fuseFS = MyFuse{target, std::move(layers), extraOptions};
+    onExit = [&](int signal) {
+        std::cout << "received exit signal\n";
+        fuseFS.close();
+    };
     while (!finish) {
         fuseFS.loop();
     }
-    gThread.join();
 }
