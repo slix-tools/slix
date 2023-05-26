@@ -1,26 +1,44 @@
-#include <filesystem>
-#include <vector>
-#include <functional>
-#include <fstream>
-#include <iostream>
-#include <unordered_set>
-#include <memory>
-#include <csignal>
+#include "fsx/Reader.h"
+#include "InteractiveProcess.h"
+
 #include <atomic>
+#include <csignal>
 #include <cstring>
+#include <filesystem>
+#include <fstream>
+#include <functional>
+#include <iostream>
+#include <memory>
+#include <random>
 #include <ranges>
+#include <sstream>
 #include <thread>
 #include <unordered_map>
+#include <unordered_set>
 #include <variant>
+#include <vector>
 
 #define FUSE_USE_VERSION 31
 #include <fuse.h>
 #include <fuse/fuse_lowlevel.h>
 
-#include "fsx/Reader.h"
-
 template<class... Ts>
 struct overloaded : Ts... { using Ts::operator()...; };
+
+auto create_temp_dir() -> std::filesystem::path {
+    auto tmp_dir = std::filesystem::temp_directory_path();
+    auto rdev = std::random_device{};
+    auto prng = std::mt19937{rdev()};
+    auto rand = std::uniform_int_distribution<uint64_t>{0};
+    for (size_t i{0}; i < 100; ++i) {
+        auto ss = std::stringstream{};
+        ss << "slix-fs-" << std::hex << rand(prng);
+        auto path = tmp_dir / ss.str();
+        // true if the directory was created.
+        if (std::filesystem::create_directory(path)) return path;
+    }
+    throw std::runtime_error{"failed creating temporary directory"};
+}
 
 struct Node {
     std::unordered_map<std::string, Node> children;
@@ -66,7 +84,7 @@ auto scanFolder(std::filesystem::path const& _path) -> Node {
         } else if (dir_entry.is_symlink()) {
             node.children.try_emplace(std::move(name));
         } else {
-            std::cout << "unsupported, skipping: " << _path / name << "\n";
+            //std::cout << "unsupported, skipping: " << _path / name << "\n";
         }
         //std::cout << dir_entry.path() << '\n';
     }
@@ -111,12 +129,12 @@ struct FileFuse {
         size = std::min(size-1, linkPath.size());
         std::copy(linkPath.c_str(), linkPath.c_str()+size, targetBuf);
         targetBuf[size] = '\0';
-        std::cout << "read link: " << linkPath << " " << targetBuf << "\n";
+        //std::cout << "read link: " << linkPath << " " << targetBuf << "\n";
         return 0;
     }
     int mknod_callback(char const* path, mode_t m, dev_t d) {
         if (!writable) return -ENOENT;
-        std::cout << "mknod for " << path << "\n";
+        //std::cout << "mknod for " << path << "\n";
 
         auto path_ = std::filesystem::path{path};
         auto parent = path_.parent_path();
@@ -135,7 +153,7 @@ struct FileFuse {
     }
     int mkdir_callback(char const* path, mode_t m) {
         if (!writable) return -ENOENT;
-        std::cout << "mkdir for " << path << "\n";
+        //std::cout << "mkdir for " << path << "\n";
 
         auto path_ = std::filesystem::path{path};
         auto parent = path_.parent_path();
@@ -146,12 +164,12 @@ struct FileFuse {
         auto node = tree.findPath(parent);
 
         node->children.try_emplace(path_.filename().string());
-        std::cout << "creating " << path << " at " << real_path(path) << "\n";
+        //std::cout << "creating " << path << " at " << real_path(path) << "\n";
         return mkdir(real_path(path).c_str(), m);
     }
     int unlink_callback(char const* path) {
         if (!writable) return -ENOENT;
-        std::cout << "unlink for " << path << "\n";
+        //std::cout << "unlink for " << path << "\n";
 
         auto path_ = std::filesystem::path{path};
 
@@ -165,7 +183,7 @@ struct FileFuse {
     }
     int rmdir_callback(char const* path) {
         if (!writable) return -ENOENT;
-        std::cout << "rmdir for " << path << "\n";
+        //std::cout << "rmdir for " << path << "\n";
 
         auto path_ = std::filesystem::path{path};
 
@@ -180,7 +198,7 @@ struct FileFuse {
 
     int symlink_callback(char const* path, char const* target) {
         if (!writable) return -ENOENT;
-        std::cout << "symlink for " << path << " " << target << "\n";
+        //std::cout << "symlink for " << path << " " << target << "\n";
 
         auto path_   = std::filesystem::path{path};
         auto target_ = std::filesystem::path{target};
@@ -203,7 +221,7 @@ struct FileFuse {
     }
     int rename_callback(char const* path, char const* target) {
         if (!writable) return -ENOENT;
-        std::cout << "rename " << path << " -> " << target << "\n";
+        //std::cout << "rename " << path << " -> " << target << "\n";
 
         auto node = tree.findPath(path);
         if (!node) return -ENOENT;
@@ -219,10 +237,10 @@ struct FileFuse {
 
         auto r = rename(real_path(path).c_str(), real_path(target).c_str());
 
-        std::cout << "real move: " << real_path(path) << " -> " << real_path(target) << "\n";
+        //std::cout << "real move: " << real_path(path) << " -> " << real_path(target) << "\n";
 
-        std::cout << "parents: " << path_.parent_path() << " -> " << target_.parent_path() << "\n";
-        std::cout << "filename: " << path_.filename() << " -> " << target_.filename() << "\n";
+        //std::cout << "parents: " << path_.parent_path() << " -> " << target_.parent_path() << "\n";
+        //std::cout << "filename: " << path_.filename() << " -> " << target_.filename() << "\n";
         // we lost the original name
         auto en = pn->children.at(path_.filename());
         pn->children.erase(path_.filename());
@@ -267,7 +285,7 @@ struct FileFuse {
 
         auto fd = open(real_path(path_).c_str(), fi->flags);
         fi->fh = fd;
-        std::cout << "open " << path_ << "\n";
+        //std::cout << "open " << path_ << "\n";
         return 0;
     }
 
@@ -276,25 +294,25 @@ struct FileFuse {
         if (!node) return -ENOENT;
 
         auto dataread = pread(fi->fh, buf, size, offset);
-        std::cout << "read " << path << " " << size << " " << dataread << " " << offset << "\n";
+        //std::cout << "read " << path << " " << size << " " << dataread << " " << offset << "\n";
         return dataread;
     }
     int write_callback(char const* path, char const* buf, size_t size, off_t offset, fuse_file_info* fi) {
-        std::cout << "trying to write\n";
+        //std::cout << "trying to write\n";
         if (!writable) {
             return -ENOENT;
         }
         return pwrite(fi->fh, buf, size, offset);
     }
     int statfs_callback(char const* path, struct statvfs* fs) {
-        std::cout << "### reporting statfs for: " << path << "\n";
+        //std::cout << "### reporting statfs for: " << path << "\n";
         return statvfs(rootPath.c_str(), fs);
     }
 
     int release_callback(char const* path, fuse_file_info* fi) {
         auto node = tree.findPath(path);
         if (!node) return -ENOENT;
-        std::cout << "release for " << path << "\n";
+        //std::cout << "release for " << path << "\n";
 
         close(fi->fh);
         return 0;
@@ -304,27 +322,27 @@ struct FileFuse {
         auto node = tree.findPath(path);
         if (!node) return -ENOENT;
 
-        std::cout << "listing " << path << "\n";
+        //std::cout << "listing " << path << "\n";
         for (auto const& [child_name, child_node] : node->children) {
-            std::cout << "comparing with: " << child_name << "\n";
+            //std::cout << "comparing with: " << child_name << "\n";
 
             if (!satisfiedFiles.contains(child_name)) {
-                std::cout << " - child: " << child_name << "\n";
+                //std::cout << " - child: " << child_name << "\n";
 
                 filler(buf, child_name.c_str(), nullptr, 0);
                 satisfiedFiles.emplace(child_name);
             }
         }
-        std::cout << "trying to read " << path << "\n";
+        //std::cout << "trying to read " << path << "\n";
         return 0;
     }
     int lock_callback(char const* path, fuse_file_info* fi, int cmd, flock* l) {
         if (!writable) return -ENOENT;
-        std::cout << "lock for " << path << " cmd: ";
-        if (cmd == F_GETLK) std::cout << "F_GETLK";
-        if (cmd == F_SETLK) std::cout << "F_SETLK";
-        if (cmd == F_SETLKW) std::cout << "F_SETLKW";
-        std::cout << "\n";
+        //std::cout << "lock for " << path << " cmd: ";
+        //if (cmd == F_GETLK) std::cout << "F_GETLK";
+        //if (cmd == F_SETLK) std::cout << "F_SETLK";
+        //if (cmd == F_SETLKW) std::cout << "F_SETLKW";
+        //std::cout << "\n";
 
         auto node = tree.findPath(path);
         if (!node) return -ENOENT;
@@ -333,7 +351,7 @@ struct FileFuse {
     }
 
     int utimens_callback(char const* path, struct timespec const tv[2]) {
-        std::cout << "trying to set time for: " << path << "\n";
+        //std::cout << "trying to set time for: " << path << "\n";
         if (!writable) return -ENOENT;
         auto node = tree.findPath(path);
         if (!node) return -ENOENT;
@@ -371,10 +389,10 @@ struct GarFuse {
                     auto s = std::string(v);
                     if (s.empty()) continue;
                     dependencies.push_back(rootPath.parent_path() / s);
-                    std::cout << "found dependency: " << s << "\n";
+                    //std::cout << "found dependency: " << s << "\n";
                 }
 
-                std::cout << "loaded dependencies: " << buffer << "\n";
+                //std::cout << "loaded dependencies: " << buffer << "\n";
                 continue;
             }
             auto name = entry->name.substr(rootfs.size());
@@ -423,7 +441,7 @@ struct GarFuse {
         size = std::min(entry->header.size, size-1);
         auto ct = reader.readContent(targetBuf, size, offset);
         targetBuf[size] = '\0';
-        std::cout << "read link: " << targetBuf << " " << entry->file_offset << " " << entry->header.size << " " << ct << "\n";
+        //std::cout << "read link: " << targetBuf << " " << entry->file_offset << " " << entry->header.size << " " << ct << "\n";
         return 0;
     }
     int open_callback(char const* path, fuse_file_info* fi) {
@@ -462,7 +480,7 @@ struct GarFuse {
 
         auto fpath = std::string_view{path};
 
-        std::cout << "listing: " << path << " " << fpath << " (" << rootPath << "\n";
+        //std::cout << "listing: " << path << " " << fpath << " (" << rootPath << "\n";
         std::string_view fpath2 = fpath;
         for (auto const& s : entries) {
             if (s.first.starts_with(fpath) && s.first.size() > fpath.size() + 1) {
@@ -473,7 +491,7 @@ struct GarFuse {
                 auto child_name = std::filesystem::path{s.first}.lexically_proximate(fpath).string();
                 if (!satisfiedFiles.contains(child_name)) {
                     satisfiedFiles.emplace(child_name);
-                    std::cout << " - child: " << child_name << "\n";
+                    //std::cout << " - child: " << child_name << "\n";
                     filler(buf, child_name.c_str(), nullptr, 0);
                 }
             }
@@ -503,13 +521,10 @@ struct MyFuse {
 
     std::vector<std::variant<FileFuse, GarFuse>> nodes;
 
-    MyFuse(std::filesystem::path mountPoint_, std::vector<std::variant<FileFuse, GarFuse>> nodes_, std::vector<std::string> extraOptions)
-        : mountPoint{std::move(mountPoint_)}
+    MyFuse(std::vector<std::variant<FileFuse, GarFuse>> nodes_, std::vector<std::string> extraOptions)
+        : mountPoint{create_temp_dir()}
         , nodes{std::move(nodes_)} {
-        if (not is_directory(mountPoint)) {
-            create_directory(mountPoint); // try to create the mountpoint
-            tearDownMountPoint = true;
-        }
+        std::cout << "creating mount point at " << mountPoint << "\n";
         {
             fuse_args args = FUSE_ARGS_INIT(0, nullptr);
 
@@ -537,7 +552,7 @@ struct MyFuse {
             .rename   = [](char const* path, char const* target) { return self().rename_callback(path, target); },
             .chmod    = [](char const* path, mode_t m) { return self().chmod_callback(path, m); },
             .chown    = [](char const* path, uid_t uid, gid_t gid) { return self().chown_callback(path, uid, gid); },
-            .truncate = [](char const* path, off_t offset) -> int { std::cout << "truncate " << path << " " << offset << "\n"; return 0; },
+//            .truncate = [](char const* path, off_t offset) -> int { std::cout << "truncate " << path << " " << offset << "\n"; return 0; },
             .open     = [](char const* path, fuse_file_info* fi) { return self().open_callback(path, fi); },
             .read     = [](char const* path, char* buf, size_t size, off_t offset, fuse_file_info* fi) { return self().read_callback(path, buf, size, offset, fi); },
             .write    = [](char const* path, char const* buf, size_t size, off_t offset, fuse_file_info* fi) { return self().write_callback(path, buf, size, offset, fi); },
@@ -557,9 +572,7 @@ struct MyFuse {
     ~MyFuse() {
         fuse_destroy(fusePtr);
 
-        if (tearDownMountPoint) {
-            remove(mountPoint);
-        }
+        remove(mountPoint);
     }
 
     void close() {
@@ -598,7 +611,6 @@ struct MyFuse {
                 } \
                 return -ENOENT; \
             }); \
-            std::cout << #name << " path: " << path << " " << r << "\n"; \
             return r; \
         }
     fwd_callback(getattr_callback)
@@ -623,10 +635,10 @@ struct MyFuse {
                 fs.readdir_callback(path, buf, filler, satisfiedFiles);
             }, fs);
         }
-        std::cout << "reporting files:\n";
-        for (auto s : satisfiedFiles) {
-            std::cout << "  " << s << "\n";
-        }
+//        std::cout << "reporting files:\n";
+//        for (auto s : satisfiedFiles) {
+//            std::cout << "  " << s << "\n";
+//        }
         return 0;
     }
     fwd_callback(lock_callback)
@@ -636,14 +648,13 @@ struct MyFuse {
 std::atomic_bool finish{false};
 
 int main(int argc, char** argv) {
-    if (argc < 2) {
-        throw std::runtime_error{"need at least 2 parameters"};
+    if (argc < 1) {
+        throw std::runtime_error{"need at least 1 parameters"};
     }
     auto input = std::vector<std::filesystem::path>{};
-    auto target = std::filesystem::path{argv[argc-1]};
     auto layers = std::vector<std::variant<FileFuse, GarFuse>>{};
     auto packages = std::vector<std::string>{};
-    for (size_t i{1}; i < argc-1; ++i) {
+    for (size_t i{1}; i < argc; ++i) {
         packages.emplace_back(argv[i]);
     }
     while (!packages.empty()) {
@@ -664,10 +675,6 @@ int main(int argc, char** argv) {
     static auto onExit = std::function<void(int)>{[](int){}};
 
     std::signal(SIGINT, [](int signal) {
-        if (finish) {
-            std::terminate();
-        }
-        finish = true;
         onExit(signal);
     });
 
@@ -687,12 +694,22 @@ int main(int argc, char** argv) {
         }
     }
 
-    auto fuseFS = MyFuse{target, std::move(layers), extraOptions};
-    onExit = [&](int signal) {
-        std::cout << "received exit signal\n";
-        fuseFS.close();
-    };
-    while (!finish) {
-        fuseFS.loop();
+    auto fuseFS = MyFuse{std::move(layers), extraOptions};
+    auto runningFuse = std::jthread{[&]() {
+        while (!finish) {
+            fuseFS.loop();
+        }
+    }};
+    try {
+        auto ip = process::InteractiveProcess{std::vector<std::string>{"/usr/bin/bash", "--norc", "--noprofile"}, fuseFS.mountPoint};
+        onExit = [&](int signal) {
+            ip.sendSignal(signal);
+        };
+    } catch(std::exception const& e) {
+        std::cout << "error: " << e.what() << "\n";
     }
+    onExit = [](int) {};
+    finish = true;
+    fuseFS.close();
+    runningFuse.join();
 }
