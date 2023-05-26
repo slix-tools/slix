@@ -663,7 +663,7 @@ int main(int argc, char** argv) {
         packages.pop_back();
         if (addedPackages.contains(input)) continue;
         addedPackages.insert(input);
-        std::cout << "layer " << layers.size() << "\n";
+        std::cout << "layer " << layers.size() << " - ";
         if (input.extension() == ".gar") {
             layers.emplace_back<GarFuse>(input);
             auto const& fuse = std::get<GarFuse>(layers.back());
@@ -704,7 +704,11 @@ int main(int argc, char** argv) {
         }
     }};
     try {
-        auto ip = process::InteractiveProcess{std::vector<std::string>{"/usr/bin/bash", "--norc", "--noprofile"}, fuseFS.mountPoint};
+        auto envp = std::vector<std::string>{};
+        envp.push_back("PATH=" + fuseFS.mountPoint.string() + "/usr/bin");
+        envp.push_back("LD_LIBRARY_PATH=" + fuseFS.mountPoint.string() + "/usr/lib");
+
+        auto ip = process::InteractiveProcess{std::vector<std::string>{"/usr/bin/bash", "--norc", "--noprofile"}, envp};
         onExit = [&](int signal) {
             ip.sendSignal(signal);
         };

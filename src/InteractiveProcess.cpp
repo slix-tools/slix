@@ -27,7 +27,7 @@ struct InteractiveProcess::PImpl {
 
     std::filesystem::path oldCwd {"."};
 
-    PImpl(std::vector<std::string> const& prog, std::filesystem::path const& _cwd) {
+    PImpl(std::vector<std::string> const& prog, std::vector<std::string> const& envp, std::filesystem::path const& _cwd) {
         fdp = posix_openpt(O_RDWR);
         if (fdp < 0) {
             throw std::runtime_error("InteractiveProcess: call posix_openpt() failed");
@@ -48,7 +48,7 @@ struct InteractiveProcess::PImpl {
             oldCwd = std::filesystem::current_path();
             std::filesystem::current_path(_cwd);
 
-            childProcess(prog);
+            childProcess(prog, envp);
         } else {
             parentProcess();
         }
@@ -58,7 +58,7 @@ struct InteractiveProcess::PImpl {
         std::filesystem::current_path(oldCwd);
     }
 private:
-    void childProcess(std::vector<std::string> const& _prog) {
+    void childProcess(std::vector<std::string> const& _prog, std::vector<std::string> const& _envp) {
         struct termios child_orig_term_settings; // Saved terminal settings
         struct termios new_term_settings; // Current terminal settings
 
@@ -105,24 +105,19 @@ private:
         // (Mandatory for programs like the shell to make them manage correctly their outputs)
         ioctl(0, TIOCSCTTY, 1);
 
-        std::string envPath = getenv("PATH");
-        auto execStr = _prog[0];
-
-
         auto argv = std::vector<char const*>{};
         for (auto& a : _prog) {
             argv.push_back(a.c_str());
         }
         argv.push_back(nullptr);
+
         auto envp = std::vector<char const*>{};
-        auto path = std::filesystem::current_path();
-        std::string PATH="PATH=" + path.string() + "/usr/bin";
-        std::string LD_LIBRARY_PATH="LD_LIBRARY_PATH=" + path.string() + "/usr/lib";
-        envp.push_back(PATH.c_str());
-        envp.push_back(LD_LIBRARY_PATH.c_str());
+        for (auto& e : _envp) {
+            envp.push_back(e.c_str());
+        }
         envp.push_back(nullptr);
 
-        execvpe(execStr.c_str(), (char**)argv.data(), (char**)envp.data());
+        execvpe(_prog[0].c_str(), (char**)argv.data(), (char**)envp.data());
         exit(127); /* only if execv fails */
     }
     void parentProcess() {
@@ -179,8 +174,8 @@ private:
     }
 };
 
-InteractiveProcess::InteractiveProcess(std::vector<std::string> const& prog, std::filesystem::path const& _cwd)
-    : pimpl { std::make_unique<PImpl>(prog, _cwd) }
+InteractiveProcess::InteractiveProcess(std::vector<std::string> const& prog, std::vector<std::string> const& envp, std::filesystem::path const& _cwd)
+    : pimpl { std::make_unique<PImpl>(prog, envp, _cwd) }
 {}
 
 InteractiveProcess::~InteractiveProcess() = default;

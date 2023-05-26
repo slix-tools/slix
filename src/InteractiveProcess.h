@@ -12,7 +12,7 @@ private:
     struct PImpl;
     std::unique_ptr<PImpl> pimpl;
 public:
-    InteractiveProcess(std::vector<std::string> const& prog, std::filesystem::path const& _cwd = std::filesystem::current_path());
+    InteractiveProcess(std::vector<std::string> const& prog, std::vector<std::string> const& envp, std::filesystem::path const& _cwd = std::filesystem::current_path());
 
     ~InteractiveProcess();
     InteractiveProcess(InteractiveProcess const&) = delete;
