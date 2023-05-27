@@ -15,10 +15,31 @@
 
 std::atomic_bool finish{false};
 
+auto searchPackagePath(std::vector<std::filesystem::path> const& slixRoots, std::string const& name) -> std::filesystem::path {
+    for (auto p : slixRoots) {
+        for (auto pkg : std::filesystem::directory_iterator{p}) {
+            auto filename = pkg.path().filename();
+            if (filename.string().starts_with(name + "@")) {
+                return pkg.path();
+            }
+        }
+    }
+    return name;
+}
+
 int main(int argc, char** argv) {
     if (argc < 1) {
         throw std::runtime_error{"need at least 1 parameters"};
     }
+    auto slixRoots = [&]() -> std::vector<std::filesystem::path> {
+        auto ptr = std::getenv("SLIX_ROOT");
+        if (!ptr) throw std::runtime_error("unknown SLIX_ROOT");
+        auto paths = std::vector<std::filesystem::path>{};
+        for (auto part : std::views::split(std::string_view{ptr}, ':')) {
+            paths.emplace_back(std::string_view{part.begin(), part.size()});
+        }
+        return paths;
+    }();
     auto input = std::vector<std::filesystem::path>{};
     auto layers = std::vector<GarFuse>{};
     auto packages = std::vector<std::string>{};
@@ -32,7 +53,8 @@ int main(int argc, char** argv) {
         if (addedPackages.contains(input)) continue;
         addedPackages.insert(input);
         std::cout << "layer " << layers.size() << " - ";
-        auto const& fuse = layers.emplace_back(input);
+        auto path = searchPackagePath(slixRoots, input);
+        auto const& fuse = layers.emplace_back(path);
         for (auto const& d : fuse.dependencies) {
             packages.push_back(d);
         }
@@ -55,7 +77,7 @@ int main(int argc, char** argv) {
         envp.push_back("PATH=" + fuseFS.mountPoint.string() + "/usr/bin");
         envp.push_back("LD_LIBRARY_PATH=" + fuseFS.mountPoint.string() + "/usr/lib");
 
-        auto ip = process::InteractiveProcess{std::vector<std::string>{"/usr/bin/bash", "--norc", "--noprofile"}, envp};
+        auto ip = process::InteractiveProcess{std::vector<std::string>{fuseFS.mountPoint.string() + "/usr/bin/bash", "--norc", "--noprofile"}, envp};
         onExit = [&](int signal) {
             ip.sendSignal(signal);
         };
