@@ -668,7 +668,7 @@ int main(int argc, char** argv) {
             layers.emplace_back<GarFuse>(input);
             auto const& fuse = std::get<GarFuse>(layers.back());
             for (auto const& d : fuse.dependencies) {
-                packages.push_back(d + ".gar");
+                packages.push_back(d);
             }
         } else {
             layers.emplace_back(FileFuse{input, false});
