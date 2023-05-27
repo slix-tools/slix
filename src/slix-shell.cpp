@@ -202,7 +202,7 @@ struct MyFuse {
 
     std::vector<GarFuse> nodes;
 
-    MyFuse(std::vector<GarFuse> nodes_, std::vector<std::string> extraOptions)
+    MyFuse(std::vector<GarFuse> nodes_)
         : mountPoint{create_temp_dir()}
         , nodes{std::move(nodes_)} {
         std::cout << "creating mount point at " << mountPoint << "\n";
@@ -211,10 +211,6 @@ struct MyFuse {
 
             for (auto a : {"", "-oauto_unmount"}) {
                 fuse_opt_add_arg(&args, a);
-            }
-            for (auto o : extraOptions) {
-                std::cout << "using extraOption: " << o << "\n";
-                fuse_opt_add_arg(&args, o.c_str());
             }
             channel = fuse_mount(mountPoint.c_str(), &args);
             fuse_opt_free_args(&args);
@@ -353,23 +349,7 @@ int main(int argc, char** argv) {
         onExit(signal);
     });
 
-    auto extraOptions = std::vector<std::string>{};
-    if (auto opt = std::getenv("MNTOPT"); opt) {
-        auto v = std::string_view{opt};
-        auto p = v.find(' ');
-        while (p != std::string_view::npos) {
-            extraOptions.emplace_back(v.substr(0, p));
-            std::cout << "extraOption: " << extraOptions.back() << "\n";
-            v = v.substr(p+1);
-            p = v.find(' ');
-        }
-        if (!v.empty()) {
-            extraOptions.emplace_back(v);
-            std::cout << "extraOption: " << extraOptions.back() << "\n";
-        }
-    }
-
-    auto fuseFS = MyFuse{std::move(layers), extraOptions};
+    auto fuseFS = MyFuse{std::move(layers)};
     auto runningFuse = std::jthread{[&]() {
         while (!finish) {
             fuseFS.loop();
