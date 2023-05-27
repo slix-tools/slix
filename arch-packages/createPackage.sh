@@ -32,8 +32,15 @@ pacman -Qi ${pkg} \
     | sort -u \
     > ${target}/dependencies.txt
 ../archive ${target}
-hash=$(sha256sum ${target}.gar | awk '{print $1}')
-mv ${target}.gar ${target}@${version}-$hash.gar
-echo "dependencies:"
-cat ${target}/dependencies.txt
+hash=$(sha256sum -b ${target}.gar | awk '{print $1}')
+destFile="${target}@${version}-$hash.gar"
+if [ ! -e "${destFile}" ]; then
+    echo "created ${destFile}"
+    echo "missing dependencies:"
+    cat ${target}/dependencies.txt | grep Missing.gar
+else
+    echo "${destFile} already existed"
+fi
+mv ${target}.gar ${destFile}
+
 rm -rf ${target}
