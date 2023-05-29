@@ -5,6 +5,7 @@ pkg=${1}
 target=${1}
 root=${target}/rootfs
 mkdir -p ${root}
+mkdir -p ${root}/slix-bin
 
 
 pacman -Ql ${pkg} | awk '{ print $2; }' | (
@@ -30,14 +31,13 @@ pacman -Ql ${pkg} | awk '{ print $2; }' | (
                 t=$(file -b -h --mime-type ${root}/${line})
 
                 # patch ld-linux.so.2 (interpreter of binaries)
-                if [ "${t}" == "application/x-executable" ] \
-                   || [ "${t}" == "application/x-pie-executable" ]; then
-                    inter=$(patchelf --print-interpreter ${root}/${line} 2>/dev/null)
-                    if [ "${inter}" == "/lib64/ld-linux-x86-64.so.2" ]; then
-                        ld=$(realpath -m --relative-to $(dirname ${root}/${line}) ${root}/usr/lib/ld-linux-x86-64.so.2)
-                        patchelf --set-interpreter ${ld} ${root}/${line}
-                    else
-                        echo "${root}/${line} unexpected elf interpreter, needs fixing"
+                if [ "${t}" == "application/x-executable" ]; then
+                    echo "does ${root}/${line} need patching?"
+                elif [ "${t}" == "application/x-pie-executable" ]; then
+                    if [[ ${line} =~ ^/usr/bin/[^/]*$ ]]; then
+                        file=$(basename ${line})
+                        mv ${root}/usr/bin/${file} ${root}/slix-bin
+                        ln -sr ${root}/usr/bin/slix-ld ${root}/usr/bin/${file}
                     fi
 
                 # patch shell scripts

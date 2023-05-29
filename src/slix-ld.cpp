@@ -6,17 +6,20 @@
 
 int main(int argc, char** argv) {
     auto p = std::filesystem::path{argv[0]};
+    p = std::filesystem::canonical("/proc/self/exe").parent_path() / p.filename();
+    std::cout << "redirecting: " << p << "\n";
+    std::cout << std::filesystem::canonical("/proc/self/exe") << "\n";
     if (!is_symlink(p)) {
         std::cout << "not a symlink, you don't want to execute this directly\n";
     }
 
     // extracting slix-path
-    auto symBinP = p.parent_path(); // path to /tmp/slix-fs-xyz/usr/sym-bin
-    auto usrP    = symBinP.parent_path(); // path to /tmp/slix-fs-xyz/usr
-    auto slixP   = usrP.parent_path(); // path to /tmp/slix-fs-xyz
+    auto binP  = p.parent_path(); // path to /tmp/slix-fs-xyz/usr/bin
+    auto usrP  = binP.parent_path(); // path to /tmp/slix-fs-xyz/usr
+    auto slixP = usrP.parent_path(); // path to /tmp/slix-fs-xyz
 
     auto str = std::vector<char*>{};
-    auto newBP = usrP/"bin"/p.filename();
+    auto newBP = slixP / "slix-bin"/p.filename();
 
     auto dynamicLoader = slixP / "usr" / "lib" / "ld-linux-x86-64.so.2";
 
