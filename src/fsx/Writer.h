@@ -58,7 +58,7 @@ struct Writer {
             assert(false);
             throw std::runtime_error{"this shouldn't happen"};
         }();
-        std::cout << "adding file " << path << " as " << newName << " type: " << (int)type << " size: " << size << "\n";
+//        std::cout << "adding file " << path << " as " << newName << " type: " << (int)type << " size: " << size << "\n";
         auto state = EntryHeader {
             .uid       = stat_.st_uid,
             .gid       = stat_.st_gid,

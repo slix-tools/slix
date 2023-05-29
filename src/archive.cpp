@@ -22,10 +22,10 @@ int main(int argc, char** argv) {
     addFolder(path, path, wfs);
     wfs.close();
 
-    auto rfs = fsx::Reader{path.string() + ".gar"};
+/*    auto rfs = fsx::Reader{path.string() + ".gar"};
 
     for (auto entry = rfs.readNext(); entry; entry = rfs.readNext()) {
         auto const& [header, name, offset] = *entry;
         std::cout << "read file: " << name << "\n";
-    }
+    }*/
 }
