@@ -7,7 +7,7 @@ FLAGS="${FLAGS} -ggdb"
 g++ ${FLAGS} -c src/InteractiveProcess.cpp -o obj/InteractiveProcess.o
 
 g++ ${FLAGS} -c src/slix-shell.cpp -o obj/slix-shell.cpp.o
-g++ obj/slix-shell.cpp.o obj/InteractiveProcess.o -lfuse -larchive -o slix-shell
+g++ obj/slix-shell.cpp.o obj/InteractiveProcess.o -lfuse -o slix-shell
 
 g++ ${FLAGS} -c src/archive.cpp -o obj/archive.cpp.o
-g++ obj/archive.cpp.o -lfuse -larchive -o archive
+g++ obj/archive.cpp.o -lfuse -o archive
