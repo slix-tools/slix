@@ -7,6 +7,8 @@ root=${target}/rootfs
 mkdir -p ${root}
 mkdir -p ${root}/slix-bin
 
+slix_ld=$(find . | grep 'slix-ld@1.0.0-')
+echo "using slix_ld: ${slix_ld}"
 
 pacman -Ql ${pkg} | awk '{ print $2; }' | (
     while IFS='$\n' read -r line; do
@@ -63,6 +65,7 @@ version=$(pacman -Qi ${pkg} \
     | tr '\n' ' ' \
     | awk '{print $3}')
 
+echo $slix_ld > ${target}/dependencies.txt
 pacman -Qi ${pkg} \
     | grep "Depends On" \
     | cut -d ':' -f 2 \
@@ -72,7 +75,7 @@ pacman -Qi ${pkg} \
     | sort -u \
     | xargs -n 1 ./translateName.sh \
     | sort -u \
-    > ${target}/dependencies.txt
+    >> ${target}/dependencies.txt
 ../archive ${target}
 hash=$(sha256sum -b ${target}.gar | awk '{print $1}')
 destFile="${target}@${version}-$hash.gar"
