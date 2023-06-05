@@ -14,3 +14,6 @@ g++ obj/slix-ld.cpp.o -o slix-ld -static
 
 g++ ${FLAGS} -c src/archive.cpp -o obj/archive.cpp.o
 g++ obj/archive.cpp.o -lfuse -o archive
+
+g++ ${FLAGS} -c src/packageAnalyzer.cpp -o obj/packageAnalyzer.cpp.o
+g++ obj/packageAnalyzer.cpp.o -lfuse -o packageAnalyzer

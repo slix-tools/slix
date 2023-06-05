@@ -73,6 +73,7 @@ pacman -Qi ${pkg} \
     | grep -v None \
     | grep . \
     | sort -u \
+    | grep -v "\.so" \
     | xargs -n 1 ./translateName.sh \
     | sort -u \
     >> ${target}/dependencies.txt
@@ -81,7 +82,7 @@ hash=$(sha256sum -b ${target}.gar | awk '{print $1}')
 destFile="${target}@${version}-$hash.gar"
 if [ ! -e "${destFile}" ]; then
     if [ $(cat ${target}/dependencies.txt | grep Missing.gar | wc -l) -ge 1 ]; then
-        echo "missing dependencies:"
+        echo "${target} is missing dependencies:"
         cat ${target}/dependencies.txt | grep Missing.gar
         destFile="${target}@${version}-defect.gar"
         rm ${target}.gar
