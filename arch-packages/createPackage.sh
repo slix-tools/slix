@@ -75,12 +75,12 @@ pacman -Ql ${pkg} | awk '{ print $2; }' | (
                     if [ "${inter}" == "#!/bin/sh" ] \
                         || [ "${inter}" == "#! /bin/sh" ] \
                         || [ "${inter}" == "#!/bin/sh -" ]; then
-                        sed -i '1s#.*#/usr/bin/env sh#' ${root}/${line}
+                        sed -i '1s#.*#\#!/usr/bin/env sh#' ${root}/${line}
                     elif [ "${inter}" == "#!/bin/bash" ]; then
-                        sed -i '1s#.*#/usr/bin/env bash#' ${root}/${line}
+                        sed -i '1s#.*#\#!/usr/bin/env bash#' ${root}/${line}
                     elif [ "${inter}" == "#!/bin/zsh" ] \
                         || [ "${inter}" == "#!/usr/local/bin/zsh" ]; then
-                        sed -i '1s#.*#/usr/bin/env zsh#' ${root}/${line}
+                        sed -i '1s#.*#\#!/usr/bin/env zsh#' ${root}/${line}
                     else
                         echo "${root}/${line} needs fixing, unexpected shell interpreter: ${inter}"
                     fi
