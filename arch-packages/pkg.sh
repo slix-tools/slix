@@ -1,3 +1,5 @@
+set -Eeuo pipefail
+
 if [ -z ${SLIX_ROOT} ]; then
     echo "SLIX_ROOT not set"
     exit

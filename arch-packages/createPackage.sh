@@ -23,8 +23,13 @@ mkdir -p ${root}/slix-bin
 # check dependencies
 echo -n "" > ${target}/dependencies.txt
 while [ ${#@} -gt 0 ]; do
-    d=$1
-    d=$(realpath --relative-to ${SLIX_ROOT} $(find ${SLIX_ROOT} | grep $d'@'))
+    d="$1"
+    p="$(find ${SLIX_ROOT} | grep $d'@' || true)"
+    if [ -z "${p}" ]; then
+        echo "$pkg dependency $d is missing"
+        exit 1
+    fi
+    d=$(realpath --relative-to ${SLIX_ROOT} $p)
     echo $d >> ${target}/dependencies.txt
     shift
 done
