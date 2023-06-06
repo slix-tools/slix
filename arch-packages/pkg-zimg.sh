@@ -1,6 +1,3 @@
 name=zimg
-deps="gcc-libs glibc"
-for d in $deps; do
-    bash pkg-$d.sh
-done
-./createPackage.sh ${name} slix-ld ${deps}
+deps="slix-ld gcc-libs glibc"
+source pkg.sh

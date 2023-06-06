@@ -1,6 +1,3 @@
 name=libpsl
-deps="libidn2 libunistring"
-for d in $deps; do
-    bash pkg-$d.sh
-done
-./createPackage.sh ${name} slix-ld ${deps}
+deps="slix-ld libidn2 libunistring"
+source pkg.sh

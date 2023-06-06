@@ -1,6 +1,3 @@
 name=libpcap
-deps="glibc libnl bash"
-for d in $deps; do
-    bash pkg-$d.sh
-done
-./createPackage.sh ${name} slix-ld ${deps}
+deps="slix-ld glibc libnl bash"
+source pkg.sh

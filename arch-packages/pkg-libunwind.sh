@@ -1,6 +1,3 @@
 name=libunwind
-deps="xz zlib"
-for d in $deps; do
-    bash pkg-$d.sh
-done
-./createPackage.sh ${name} slix-ld ${deps}
+deps="slix-ld xz zlib"
+source pkg.sh
