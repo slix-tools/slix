@@ -51,9 +51,8 @@ pacman -Ql ${pkg} | awk '{ print $2; }' | (
                 t=$(file -b -h --mime-type ${root}/${line})
 
                 # patch ld-linux.so.2 (interpreter of binaries)
-                if [ "${t}" == "application/x-executable" ]; then
-                    echo "does ${root}/${line} need patching?"
-                elif [ "${t}" == "application/x-pie-executable" ]; then
+                if [ "${t}" == "application/x-executable" ] \
+                     || [ "${t}" == "application/x-pie-executable" ]; then
                     if [[ ${line} =~ ^/usr/bin/[^/]*$ ]]; then
                         file=$(basename ${line})
                         mv ${root}/usr/bin/${file} ${root}/slix-bin
