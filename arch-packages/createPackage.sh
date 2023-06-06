@@ -34,6 +34,10 @@ pacman -Ql ${pkg} | awk '{ print $2; }' | (
         if [ -d $line ] && [ ! -h $line ]; then
             mkdir -p ${root}/${line}
         elif [ -e $line ]; then
+            if [ ! -r $line ]; then
+                echo "no read access for ${line}"
+                continue
+            fi
             cp -a ${line} ${root}/${line}
 
             ############################
