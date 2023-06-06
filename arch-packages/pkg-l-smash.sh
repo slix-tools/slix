@@ -1,3 +1,3 @@
-name=libjpeg-turbo
+name=l-smash
 deps="slix-ld glibc"
 source pkg.sh

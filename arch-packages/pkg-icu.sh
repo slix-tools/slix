@@ -1,6 +1,3 @@
 name=icu
-deps="gcc-libs bash"
-for d in $deps; do
-    bash pkg-$d.sh
-done
-./createPackage.sh ${name} slix-ld ${deps}
+deps="slix-ld gcc-libs bash"
+source pkg.sh

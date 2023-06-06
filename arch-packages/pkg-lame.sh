@@ -1,6 +1,3 @@
 name=lame
-deps="ncurses"
-for d in $deps; do
-    bash pkg-$d.sh
-done
-./createPackage.sh ${name} slix-ld ${deps}
+deps="slix-ld ncurses"
+source pkg.sh

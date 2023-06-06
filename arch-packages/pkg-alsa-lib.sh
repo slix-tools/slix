@@ -1,6 +1,3 @@
 name=alsa-lib
-deps="alsa-topology-conf alsa-ucm-conf glibc"
-for d in $deps; do
-    bash pkg-$d.sh
-done
-./createPackage.sh ${name} slix-ld ${deps}
+deps="slix-ld alsa-topology-conf alsa-ucm-conf glibc"
+source pkg.sh

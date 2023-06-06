@@ -1,6 +1,3 @@
 name=e2fsprogs
-deps="bash util-linux-libs"
-for d in $deps; do
-    bash pkg-$d.sh
-done
-./createPackage.sh ${name} slix-ld ${deps}
+deps="slix-ld bash util-linux-libs"
+source pkg.sh

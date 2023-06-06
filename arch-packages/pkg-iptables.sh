@@ -1,6 +1,3 @@
 name=iptables
-deps="libnftnl libpcap libnfnetlink libnetfilter_conntrack bash"
-for d in $deps; do
-    bash pkg-$d.sh
-done
-./createPackage.sh ${name} slix-ld ${deps}
+deps="slix-ld libnftnl libpcap libnfnetlink libnetfilter_conntrack bash"
+source pkg.sh

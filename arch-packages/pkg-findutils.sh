@@ -1,6 +1,3 @@
 name=findutils
-deps="glibc bash"
-for d in $deps; do
-    bash pkg-$d.sh
-done
-./createPackage.sh ${name} slix-ld ${deps}
+deps="slix-ld glibc bash"
+source pkg.sh

@@ -1,6 +1,3 @@
 name=libgcrypt
-deps="libgpg-error"
-for d in $deps; do
-    bash pkg-$d.sh
-done
-./createPackage.sh ${name} slix-ld ${deps}
+deps="slix-ld libgpg-error"
+source pkg.sh
