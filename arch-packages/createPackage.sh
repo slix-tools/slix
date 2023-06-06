@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+set -Eeuo pipefail
 
 pkg=${1}
 target=${1}
