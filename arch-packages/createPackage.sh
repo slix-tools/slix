@@ -85,6 +85,17 @@ pacman -Ql ${pkg} | awk '{ print $2; }' | (
                         echo "${root}/${line} needs fixing, unexpected shell interpreter: ${inter}"
                     fi
                 fi
+            elif [ -L ${root}/${line} ] && [ "$(realpath --relative-to ${root} ${root}/${line})" == "usr/bin/slix-ld" ]; then
+                t=$(file -b -h --mime-type ${root}/${line})
+
+                # patch ld-linux.so.2 (interpreter of binaries)
+                    if [[ ${line} =~ ^/usr/bin/[^/]*$ ]]; then
+                        file=$(basename ${line})
+                        mv ${root}/usr/bin/${file} ${root}/slix-bin
+                        ln -sr ${root}/usr/bin/slix-ld ${root}/usr/bin/${file}
+                    fi
+            else
+                true
             fi
         fi
     done
