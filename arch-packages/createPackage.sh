@@ -3,12 +3,30 @@
 
 pkg=${1}
 target=${1}
+shift
+
+if [ -z ${SLIX_ROOT} ]; then
+    echo "SLIX_ROOT not set"
+    exit
+fi
+
+# check if the package itself exists
+if [ $(find ${SLIX_ROOT} | grep "/${pkg}@" | wc -l) -gt 0 ]; then
+    exit
+fi
+
 root=${target}/rootfs
 mkdir -p ${root}
 mkdir -p ${root}/slix-bin
 
-slix_ld=$(find . | grep 'slix-ld@1.0.0-')
-echo "using slix_ld: ${slix_ld}"
+# check dependencies
+echo -n "" > ${target}/dependencies.txt
+while [ ${#@} -gt 0 ]; do
+    d=$1
+    d=$(realpath --relative-to ${SLIX_ROOT} $(find ${SLIX_ROOT} | grep $d'@'))
+    echo $d >> ${target}/dependencies.txt
+    shift
+done
 
 pacman -Ql ${pkg} | awk '{ print $2; }' | (
     while IFS='$\n' read -r line; do
@@ -65,29 +83,16 @@ version=$(pacman -Qi ${pkg} \
     | tr '\n' ' ' \
     | awk '{print $3}')
 
-echo $slix_ld > ${target}/dependencies.txt
-pacman -Qi ${pkg} \
-    | grep "Depends On" \
-    | cut -d ':' -f 2 \
-    | tr ' ' '\n' \
-    | grep -v None \
-    | grep . \
-    | sort -u \
-    | grep -v "\.so" \
-    | xargs -n 1 ./translateName.sh \
-    | sort -u \
-    >> ${target}/dependencies.txt
-../archive ${target}
+../build/bin/archive ${target}
 hash=$(sha256sum -b ${target}.gar | awk '{print $1}')
 destFile="${target}@${version}-$hash.gar"
 if [ ! -e "${destFile}" ]; then
     if [ $(cat ${target}/dependencies.txt | grep Missing.gar | wc -l) -ge 1 ]; then
         echo "${target} is missing dependencies:"
         cat ${target}/dependencies.txt | grep Missing.gar
-        destFile="${target}@${version}-defect.gar"
         rm ${target}.gar
     else
-       mv ${target}.gar ${destFile}
+        mv ${target}.gar ${SLIX_ROOT}/${destFile}
         echo "created ${destFile}"
     fi
 else
