@@ -1,3 +1,3 @@
 name=vim
-deps="slix-ld gpm acl glibc libgcrypt zlib perl"
+deps="slix-ld vim-runtime gpm acl glibc libgcrypt zlib perl"
 source pkg.sh
