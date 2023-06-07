@@ -20,7 +20,7 @@ auto cliHelp = clice::Argument { .arg      = {"--help"},
 };
 auto cliCommand = clice::Argument { .arg   = {"-c"},
                                     .desc  = "program to execute inside the shell",
-                                    .value = std::string{"bash"},
+                                    .value = std::vector<std::string>{},
 };
 
 auto cliVerbose = clice::Argument{ .arg    = {"--verbose"},
@@ -75,10 +75,14 @@ void app() {
         ifs.open(mountPoint + "/slix-lock");
     }
 
-    auto _prog = std::vector<std::string>{"/usr/bin/env", *cliCommand};
+    auto argvStr = std::vector<std::string>{"/usr/bin/env"};
+    for (auto const& c : *cliCommand) {
+        argvStr.push_back(c);
+    }
+
     auto argv = std::vector<char const*>{};
-    for (auto& a : _prog) {
-        argv.push_back(a.c_str());
+    for (auto const& s : argvStr) {
+        argv.emplace_back(s.c_str());
     }
     argv.push_back(nullptr);
 
@@ -90,7 +94,7 @@ void app() {
     }
     envp.push_back(nullptr);
 
-    execvpe("/usr/bin/env", (char**)argv.data(), (char**)envp.data());
+    execvpe(argv[0], (char**)argv.data(), (char**)envp.data());
     exit(127);
 }
 
