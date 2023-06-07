@@ -63,7 +63,7 @@ void app() {
 
     auto binPath = std::filesystem::canonical("/proc/self/exe").parent_path() / "slix-mount";
 
-    auto call = std::string{"nohup " + binPath.string() + " --mount " + mountPoint + " -p"};
+    auto call = std::string{"nohup " + binPath.string() + " --verbose --mount " + mountPoint + " -p"};
     for (auto p : *cliPackages) {
         call += " " + p;
     }
@@ -71,7 +71,7 @@ void app() {
     std::system(call.c_str());
     auto ifs = std::ifstream{};
     while (!ifs.is_open()) {
-        std::this_thread::sleep_for(std::chrono::milliseconds{1}); //!TODO can we do this better to wait for slix-mount to finish?
+        std::this_thread::sleep_for(std::chrono::milliseconds{10}); //!TODO can we do this better to wait for slix-mount to finish?
         ifs.open(mountPoint + "/slix-lock");
     }
 

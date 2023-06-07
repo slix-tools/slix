@@ -6,6 +6,7 @@
 #include <fuse/fuse_lowlevel.h>
 #include <iostream>
 #include <unordered_set>
+#include <signal.h>
 
 
 struct MyFuse {
@@ -73,7 +74,7 @@ struct MyFuse {
                 if (path == std::string_view{"/slix-lock"}) {
                     self().connectedClients -= 1;
                     if (self().connectedClients == 0) {
-                        self().close();
+                        raise(SIGINT);
                     }
                     std::cout << "connected Clients (-1): " << self().connectedClients << "\n";
                     return 0;
@@ -98,7 +99,7 @@ struct MyFuse {
 
     ~MyFuse() {
         fuse_destroy(fusePtr);
-        while (!remove(mountPoint));
+        remove(mountPoint);
     }
 
     void close() {

@@ -58,7 +58,6 @@ auto getSlixRoots() -> std::vector<std::filesystem::path> {
 
 void app() {
     auto slixRoots = getSlixRoots();
-    auto input = std::vector<std::filesystem::path>{};
     auto layers = std::vector<GarFuse>{};
     auto packages = *cliPackages;
     auto addedPackages = std::unordered_set<std::string>{};
@@ -81,8 +80,12 @@ void app() {
     std::signal(SIGINT, [](int signal) { if (onExit) { onExit(signal); } });
 
     auto fuseFS = MyFuse{std::move(layers), cliVerbose, *cliMountPoint};
+    std::jthread thread;
     onExit = [&](int) {
-        fuseFS.close();
+        thread = std::jthread{[&]() {
+            std::this_thread::sleep_for(std::chrono::milliseconds{100});
+            fuseFS.close();
+        }};
     };
     fuseFS.loop();
 }
