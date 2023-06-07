@@ -17,8 +17,8 @@ struct MyFuse {
     std::vector<GarFuse> nodes;
     bool verbose;
 
-    MyFuse(std::vector<GarFuse> nodes_, bool _verbose)
-        : mountPoint{create_temp_dir()}
+    MyFuse(std::vector<GarFuse> nodes_, bool _verbose, std::filesystem::path _mountPoint)
+        : mountPoint{_mountPoint}
         , nodes{std::move(nodes_)}
         , verbose{_verbose} {
         if (verbose) {

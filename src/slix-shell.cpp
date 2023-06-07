@@ -59,56 +59,35 @@ auto getSlixRoots() -> std::vector<std::filesystem::path> {
 }
 
 void app() {
-    auto slixRoots = getSlixRoots();
-    auto input = std::vector<std::filesystem::path>{};
-    auto layers = std::vector<GarFuse>{};
-    auto packages = *cliPackages;
-    auto addedPackages = std::unordered_set<std::string>{};
-    while (!packages.empty()) {
-        auto input = std::filesystem::path{packages.back()};
-        packages.pop_back();
-        if (addedPackages.contains(input)) continue;
-        addedPackages.insert(input);
-        if (cliVerbose) {
-            std::cout << "layer " << layers.size() << " - ";
-        }
-        auto path = searchPackagePath(slixRoots, input);
-        auto const& fuse = layers.emplace_back(path, cliVerbose);
-        for (auto const& d : fuse.dependencies) {
-            packages.push_back(d);
-        }
+    auto mountPoint = create_temp_dir().string();
+
+    auto binPath = std::filesystem::canonical("/proc/self/exe").parent_path() / "slix-mount";
+
+    auto call = std::string{"nohup " + binPath.string() + " --mount " + mountPoint + " -p"};
+    for (auto p : *cliPackages) {
+        call += " " + p;
     }
+    call += " &";
+    std::system(call.c_str());
+    std::this_thread::sleep_for(std::chrono::seconds{2});
 
-    static auto onExit = std::function<void(int)>{[](int){}};
-
-    std::signal(SIGINT, [](int signal) {
-        onExit(signal);
-    });
-
-    auto fuseFS = MyFuse{std::move(layers), cliVerbose};
-    auto runningFuse = std::jthread{[&]() {
-        while (!finish) {
-            fuseFS.loop();
-        }
-    }};
-    try {
-        auto envp = std::vector<std::string>{};
-        envp.push_back("PATH=" + fuseFS.mountPoint.string() + "/usr/bin");
-        envp.push_back("LD_LIBRARY_PATH=" + fuseFS.mountPoint.string() + "/usr/lib");
-
-        auto ip = process::InteractiveProcess{std::vector<std::string>{"/usr/bin/env", *cliCommand}, envp};
-
-        onExit = [&](int signal) {
-            ip.sendSignal(signal);
-        };
-    } catch(std::exception const& e) {
-        std::cout << "error: " << e.what() << "\n";
+    auto _prog = std::vector<std::string>{"/usr/bin/env", *cliCommand};
+    auto argv = std::vector<char const*>{};
+    for (auto& a : _prog) {
+        argv.push_back(a.c_str());
     }
-    onExit = [](int) {};
-    finish = true;
-    fuseFS.close();
-    runningFuse.join();
+    argv.push_back(nullptr);
 
+    auto _envp = std::vector<std::string>{"PATH=" + mountPoint + "/usr/bin",
+                                          "LD_LIBRARY_PATH=" + mountPoint + "/usr/lib"};
+    auto envp = std::vector<char const*>{};
+    for (auto& e : _envp) {
+        envp.push_back(e.c_str());
+    }
+    envp.push_back(nullptr);
+
+    execvpe("/usr/bin/env", (char**)argv.data(), (char**)envp.data());
+    exit(127);
 }
 
 int main(int argc, char** argv) {

@@ -27,6 +27,10 @@ auto cliPackages = clice::Argument{ .arg   = "-p",
                                     .desc  = "packages to initiate inside the environment",
                                     .value = std::vector<std::string>{},
 };
+auto cliMountPoint = clice::Argument{ .arg  = "--mount",
+                                      .desc = "path to the mount point",
+                                      .value = std::string{},
+};
 }
 
 
@@ -76,7 +80,7 @@ void app() {
     static auto onExit = std::function<void(int)>{};
     std::signal(SIGINT, [](int signal) { if (onExit) { onExit(signal); } });
 
-    auto fuseFS = MyFuse{std::move(layers), cliVerbose};
+    auto fuseFS = MyFuse{std::move(layers), cliVerbose, *cliMountPoint};
     onExit = [&](int) {
         fuseFS.close();
     };
@@ -91,6 +95,9 @@ int main(int argc, char** argv) {
         }
         if (auto ptr = std::getenv("CLICE_COMPLETION"); ptr) {
             return 0;
+        }
+        if (!cliMountPoint) {
+            throw std::runtime_error{"no mount point given"};
         }
         app();
     } catch (std::exception const& e) {
