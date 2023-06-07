@@ -15,11 +15,15 @@ struct MyFuse {
     std::filesystem::path mountPoint;
 
     std::vector<GarFuse> nodes;
+    bool verbose;
 
-    MyFuse(std::vector<GarFuse> nodes_)
+    MyFuse(std::vector<GarFuse> nodes_, bool _verbose)
         : mountPoint{create_temp_dir()}
-        , nodes{std::move(nodes_)} {
-        std::cout << "creating mount point at " << mountPoint << "\n";
+        , nodes{std::move(nodes_)}
+        , verbose{_verbose} {
+        if (verbose) {
+            std::cout << "creating mount point at " << mountPoint << "\n";
+        }
         {
             fuse_args args = FUSE_ARGS_INIT(0, nullptr);
 

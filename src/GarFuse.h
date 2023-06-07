@@ -22,11 +22,16 @@ struct GarFuse {
 
     std::vector<std::string> dependencies;
 
-    GarFuse(std::filesystem::path rootPath_)
+    bool verbose;
+
+    GarFuse(std::filesystem::path rootPath_, bool _verbose)
         : rootPath{std::move(rootPath_)}
         , reader{rootPath}
+        , verbose{_verbose}
     {
-        std::cout << "opening: " << rootPath << "\n";
+        if (verbose) {
+            std::cout << "opening: " << rootPath << "\n";
+        }
 
         std::string rootfs = "rootfs";
         for (auto entry = reader.readNext(); entry; entry = reader.readNext()) {

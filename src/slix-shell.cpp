@@ -69,9 +69,11 @@ void app() {
         packages.pop_back();
         if (addedPackages.contains(input)) continue;
         addedPackages.insert(input);
-        std::cout << "layer " << layers.size() << " - ";
+        if (cliVerbose) {
+            std::cout << "layer " << layers.size() << " - ";
+        }
         auto path = searchPackagePath(slixRoots, input);
-        auto const& fuse = layers.emplace_back(path);
+        auto const& fuse = layers.emplace_back(path, cliVerbose);
         for (auto const& d : fuse.dependencies) {
             packages.push_back(d);
         }
@@ -83,7 +85,7 @@ void app() {
         onExit(signal);
     });
 
-    auto fuseFS = MyFuse{std::move(layers)};
+    auto fuseFS = MyFuse{std::move(layers), cliVerbose};
     auto runningFuse = std::jthread{[&]() {
         while (!finish) {
             fuseFS.loop();
