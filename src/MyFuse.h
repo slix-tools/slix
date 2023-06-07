@@ -66,12 +66,14 @@ struct MyFuse {
 
     ~MyFuse() {
         fuse_destroy(fusePtr);
-
         remove(mountPoint);
     }
 
     void close() {
+        fuse_exit(fusePtr);
         fuse_unmount(mountPoint.c_str(), channel);
+
+//        fuse_unmount(mountPoint.c_str(), channel);
     }
 
     void loop() {

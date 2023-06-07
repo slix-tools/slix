@@ -9,6 +9,9 @@ g++ ${FLAGS} -c src/InteractiveProcess.cpp -o build/obj/InteractiveProcess.o
 g++ ${FLAGS} -c src/slix-shell.cpp -o build/obj/slix-shell.cpp.o
 g++ build/obj/slix-shell.cpp.o build/obj/InteractiveProcess.o -lfuse -lfmt -o build/bin/slix-shell
 
+g++ ${FLAGS} -c src/slix-mount.cpp -o build/obj/slix-mount.cpp.o
+g++ build/obj/slix-mount.cpp.o -lfuse -lfmt -o build/bin/slix-mount
+
 g++ ${FLAGS} -c src/slix-ld.cpp -o build/obj/slix-ld.cpp.o -static
 g++ build/obj/slix-ld.cpp.o -o build/bin/slix-ld -static
 
