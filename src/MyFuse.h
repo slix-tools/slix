@@ -15,6 +15,7 @@ struct MyFuse {
     std::filesystem::path mountPoint;
 
     std::vector<GarFuse> nodes;
+    size_t connectedClients{};
     bool verbose;
 
     MyFuse(std::vector<GarFuse> nodes_, bool _verbose, std::filesystem::path _mountPoint)
@@ -37,7 +38,16 @@ struct MyFuse {
             throw std::runtime_error{"cannot mount"};
         }
         auto foperations = fuse_operations {
-            .getattr  = [](char const* path, struct stat* stbuf) { return self().getattr_callback(path, stbuf); },
+            .getattr  = [](char const* path, struct stat* stbuf) {
+                if (path == std::string_view{"/slix-lock"}) {
+                    stbuf->st_nlink = 0;
+                    stbuf->st_mode = S_IFREG;
+                    stbuf->st_size = 0;
+                    std::cout << "gettattr " << "\n";
+                    return 0;
+                }
+                return self().getattr_callback(path, stbuf);
+            },
             .readlink = [](char const* path, char* targetBuf, size_t size) { return self().readlink_callback(path, targetBuf, size); },
             .mknod    = [](char const* path, mode_t m, dev_t d) { return self().mknod_callback(path, m, d); },
             .mkdir    = [](char const* path, mode_t m) { return self().mkdir_callback(path, m); },
@@ -48,12 +58,34 @@ struct MyFuse {
             .chmod    = [](char const* path, mode_t m) { return self().chmod_callback(path, m); },
             .chown    = [](char const* path, uid_t uid, gid_t gid) { return self().chown_callback(path, uid, gid); },
 //            .truncate = [](char const* path, off_t offset) -> int { std::cout << "truncate " << path << " " << offset << "\n"; return 0; },
-            .open     = [](char const* path, fuse_file_info* fi) { return self().open_callback(path, fi); },
+            .open     = [](char const* path, fuse_file_info* fi) {
+                if (path == std::string_view{"/slix-lock"}) {
+                    self().connectedClients += 1;
+                    std::cout << "connected Clients (+1): " << self().connectedClients << "\n";
+                    return 0;
+                }
+                return self().open_callback(path, fi);
+            },
             .read     = [](char const* path, char* buf, size_t size, off_t offset, fuse_file_info* fi) { return self().read_callback(path, buf, size, offset, fi); },
             .write    = [](char const* path, char const* buf, size_t size, off_t offset, fuse_file_info* fi) { return self().write_callback(path, buf, size, offset, fi); },
             .statfs   = [](char const* path, struct statvfs* fs) { return self().statfs_callback(path, fs); },
-            .release  = [](char const* path, fuse_file_info* fi) { return self().release_callback(path, fi); },
-            .readdir  = [](char const* path, void* buf, fuse_fill_dir_t filler, off_t, fuse_file_info*) { return self().readdir_callback(path, buf, filler); },
+            .release  = [](char const* path, fuse_file_info* fi) {
+                if (path == std::string_view{"/slix-lock"}) {
+                    self().connectedClients -= 1;
+                    if (self().connectedClients == 0) {
+                        self().close();
+                    }
+                    std::cout << "connected Clients (-1): " << self().connectedClients << "\n";
+                    return 0;
+                }
+                return self().release_callback(path, fi);
+            },
+            .readdir  = [](char const* path, void* buf, fuse_fill_dir_t filler, off_t, fuse_file_info*) {
+                if (path == std::string_view{"/"}) {
+                    filler(buf, "slix-lock", nullptr, 0);
+                }
+                return self().readdir_callback(path, buf, filler);
+            },
             .lock     = [](char const* path, fuse_file_info* fi, int cmd, flock* l) { return self().lock_callback(path, fi, cmd, l); },
             .utimens  = [](char const* path, struct timespec const tv[2]) { return self().utimens_callback(path, tv); }
             //.access   = [](char const* path, int mask) { std::cout << "access: " << path << "\n"; if (auto res = access(path, mask); res == -1) return -errno; return 0; },
@@ -66,14 +98,12 @@ struct MyFuse {
 
     ~MyFuse() {
         fuse_destroy(fusePtr);
-        remove(mountPoint);
+        while (!remove(mountPoint));
     }
 
     void close() {
         fuse_exit(fusePtr);
         fuse_unmount(mountPoint.c_str(), channel);
-
-//        fuse_unmount(mountPoint.c_str(), channel);
     }
 
     void loop() {

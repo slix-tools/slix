@@ -69,7 +69,11 @@ void app() {
     }
     call += " &";
     std::system(call.c_str());
-    std::this_thread::sleep_for(std::chrono::seconds{2});
+    auto ifs = std::ifstream{};
+    while (!ifs.is_open()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds{1}); //!TODO can we do this better to wait for slix-mount to finish?
+        ifs.open(mountPoint + "/slix-lock");
+    }
 
     auto _prog = std::vector<std::string>{"/usr/bin/env", *cliCommand};
     auto argv = std::vector<char const*>{};
