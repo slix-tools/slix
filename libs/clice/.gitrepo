@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/ingydotnet/git-subrepo#readme
+;
+[subrepo]
+	remote = https://github.com/SGSSGene/clice.git
+	branch = main
+	commit = 449bac245ce13de1241217d7fef72968e3d7e74b
+	parent = a700deb3e38e073941c4f4fa827d525b209cb7ce
+	method = merge
+	cmdver = 0.4.6
