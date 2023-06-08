@@ -3,7 +3,7 @@
 #include <filesystem>
 #include <random>
 
-auto create_temp_dir() -> std::filesystem::path {
+inline auto create_temp_dir() -> std::filesystem::path {
     auto tmp_dir = std::filesystem::temp_directory_path();
     auto rdev = std::random_device{};
     auto prng = std::mt19937{rdev()};

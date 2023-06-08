@@ -1,7 +1,7 @@
 #include "utils.h"
 #include "GarFuse.h"
 #include "MyFuse.h"
-#include "InteractiveProcess.h"
+#include "slix.h"
 
 #include <atomic>
 #include <clice/clice.h>
@@ -14,24 +14,22 @@
 #include <thread>
 
 namespace {
-auto cliHelp = clice::Argument { .arg      = {"--help"},
-                                 .desc     = "prints the help page",
-                                 .cb       = []{ std::cout << clice::generateHelp(); exit(0); },
+void app();
+auto cli = clice::Argument{ .arg    = "mount",
+                                   .desc   = "mounts a shell environment",
+                                   .cb     = app,
 };
 
-auto cliVerbose = clice::Argument{ .arg    = {"--verbose"},
-                                   .desc   = "detailed description of what is happening",
-};
-
-auto cliPackages = clice::Argument{ .arg   = "-p",
+auto cliPackages = clice::Argument{ .parent = &cli,
+                                    .arg   = "-p",
                                     .desc  = "packages to initiate inside the environment",
                                     .value = std::vector<std::string>{},
 };
-auto cliMountPoint = clice::Argument{ .arg  = "--mount",
+auto cliMountPoint = clice::Argument{ .parent = &cli,
+                                      .arg  = "--mount",
                                       .desc = "path to the mount point",
                                       .value = std::string{},
 };
-}
 
 
 auto searchPackagePath(std::vector<std::filesystem::path> const& slixRoots, std::string const& name) -> std::filesystem::path {
@@ -57,6 +55,12 @@ auto getSlixRoots() -> std::vector<std::filesystem::path> {
 }
 
 void app() {
+    if (!cliMountPoint) {
+        throw std::runtime_error{"no mount point given"};
+    }
+
+    if (fork() != 0) return;
+
     std::signal(SIGHUP, [](int) {}); // ignore hangup signal
 
     auto slixRoots = getSlixRoots();
@@ -91,23 +95,4 @@ void app() {
     };
     fuseFS.loop();
 }
-
-int main(int argc, char** argv) {
-    try {
-        if (auto failed = clice::parse(argc, argv); failed) {
-            std::cerr << "parsing failed: " << *failed << "\n";
-            return 1;
-        }
-        if (auto ptr = std::getenv("CLICE_COMPLETION"); ptr) {
-            return 0;
-        }
-        if (!cliMountPoint) {
-            throw std::runtime_error{"no mount point given"};
-        }
-        if (fork() == 0) {
-            app();
-        }
-    } catch (std::exception const& e) {
-        std::cerr << "error: " << e.what() << "\n";
-    }
 }

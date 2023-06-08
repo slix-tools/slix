@@ -1,7 +1,7 @@
-#include "utils.h"
 #include "GarFuse.h"
 #include "MyFuse.h"
-#include "InteractiveProcess.h"
+#include "slix.h"
+#include "utils.h"
 
 #include <atomic>
 #include <clice/clice.h>
@@ -14,28 +14,29 @@
 #include <thread>
 
 namespace {
-auto cliHelp = clice::Argument { .arg      = {"--help"},
-                                 .desc     = "prints the help page",
-                                 .cb       = []{ std::cout << clice::generateHelp(); exit(0); },
+void app();
+auto cli = clice::Argument{ .arg    = "shell",
+                                   .desc   = "starts a slix shell",
+                                   .cb     = app,
 };
-auto cliCommand = clice::Argument { .arg   = {"-c"},
+
+auto cliCommand = clice::Argument { .parent = &cli,
+                                    .arg   = {"-c"},
                                     .desc  = "program to execute inside the shell",
                                     .value = std::vector<std::string>{},
 };
 
-auto cliVerbose = clice::Argument{ .arg    = {"--verbose"},
-                                   .desc   = "detailed description of what is happening",
-};
-
-auto cliPackages = clice::Argument{ .arg   = "-p",
+auto cliPackages = clice::Argument{ .parent = &cli,
+                                    .arg   = "-p",
                                     .desc  = "packages to initiate inside the environment",
                                     .value = std::vector<std::string>{},
 };
-auto cliMountPoint = clice::Argument{ .arg  = "--mount",
+auto cliMountPoint = clice::Argument{ .parent = &cli,
+                                      .arg  = "--mount",
                                       .desc = "path to the mount point or if already in use, reuse",
                                       .value = std::string{},
 };
-}
+
 
 
 std::atomic_bool finish{false};
@@ -75,11 +76,14 @@ void app() {
     }();
 
     if (!std::filesystem::exists(std::filesystem::path{mountPoint} / "slix-lock")) {
-        auto binPath = std::filesystem::canonical("/proc/self/exe").parent_path() / "slix-mount";
+        auto binary  = std::filesystem::canonical("/proc/self/exe");
 
-        auto call = std::string{binPath.string() + " --verbose --mount " + mountPoint + " -p"};
+        auto call = std::string{binary.string() + " --verbose mount --mount " + mountPoint + " -p"};
         for (auto p : *cliPackages) {
             call += " " + p;
+        }
+        if (cliVerbose) {
+            std::cout << "trying to call " << call << "\n";
         }
         std::system(call.c_str());
     }
@@ -111,18 +115,4 @@ void app() {
     execvpe(argv[0], (char**)argv.data(), (char**)envp.data());
     exit(127);
 }
-
-int main(int argc, char** argv) {
-    try {
-        if (auto failed = clice::parse(argc, argv); failed) {
-            std::cerr << "parsing failed: " << *failed << "\n";
-            return 1;
-        }
-        if (auto ptr = std::getenv("CLICE_COMPLETION"); ptr) {
-            return 0;
-        }
-        app();
-    } catch (std::exception const& e) {
-        std::cerr << "error: " << e.what() << "\n";
-    }
 }
