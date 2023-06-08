@@ -12,6 +12,20 @@ int main(int argc, char** argv) {
     if (!is_symlink(p)) {
         std::cout << "not a symlink, you don't want to execute this directly\n";
     }
+    // follow symlink until last one is pointing to slix-ld
+    auto target = read_symlink(p);
+    if (target.is_relative()) {
+        target = absolute(p.parent_path() / target);
+    }
+    std::cout << "target: " << target << "\n";
+    while (is_symlink(target)) {
+        p = target;
+        target = read_symlink(p);
+        if (target.is_relative()) {
+            target = absolute(p.parent_path() / target);
+        }
+        std::cout << "target: " << target << "\n";
+    }
 
     // extracting slix-path
     auto binP  = p.parent_path(); // path to /tmp/slix-fs-xyz/usr/bin
@@ -19,7 +33,7 @@ int main(int argc, char** argv) {
     auto slixP = usrP.parent_path(); // path to /tmp/slix-fs-xyz
 
     auto str = std::vector<char*>{};
-    auto newBP = slixP / "slix-bin"/p.filename();
+    auto newBP = binP / ("slix-ld-" + p.filename().string());
 
     auto dynamicLoader = slixP / "usr" / "lib" / "ld-linux-x86-64.so.2";
 
