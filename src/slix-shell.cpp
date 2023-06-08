@@ -31,6 +31,10 @@ auto cliPackages = clice::Argument{ .arg   = "-p",
                                     .desc  = "packages to initiate inside the environment",
                                     .value = std::vector<std::string>{},
 };
+auto cliMountPoint = clice::Argument{ .arg  = "--mount",
+                                      .desc = "path to the mount point or if already in use, reuse",
+                                      .value = std::string{},
+};
 }
 
 
@@ -59,16 +63,26 @@ auto getSlixRoots() -> std::vector<std::filesystem::path> {
 }
 
 void app() {
-    auto mountPoint = create_temp_dir().string();
+    auto mountPoint = [&]() -> std::string {
+        if (cliMountPoint) {
+            if (!std::filesystem::exists(*cliMountPoint)) {
+                std::filesystem::create_directory(*cliMountPoint);
+            }
+            return *cliMountPoint;
+        } else {
+            return create_temp_dir().string();
+        }
+    }();
 
-    auto binPath = std::filesystem::canonical("/proc/self/exe").parent_path() / "slix-mount";
+    if (!std::filesystem::exists(std::filesystem::path{mountPoint} / "slix-lock")) {
+        auto binPath = std::filesystem::canonical("/proc/self/exe").parent_path() / "slix-mount";
 
-    auto call = std::string{"nohup " + binPath.string() + " --verbose --mount " + mountPoint + " -p"};
-    for (auto p : *cliPackages) {
-        call += " " + p;
+        auto call = std::string{binPath.string() + " --verbose --mount " + mountPoint + " -p"};
+        for (auto p : *cliPackages) {
+            call += " " + p;
+        }
+        std::system(call.c_str());
     }
-    call += " &";
-    std::system(call.c_str());
     auto ifs = std::ifstream{};
     while (!ifs.is_open()) {
         std::this_thread::sleep_for(std::chrono::milliseconds{10}); //!TODO can we do this better to wait for slix-mount to finish?

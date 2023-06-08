@@ -57,6 +57,8 @@ auto getSlixRoots() -> std::vector<std::filesystem::path> {
 }
 
 void app() {
+    std::signal(SIGHUP, [](int) {}); // ignore hangup signal
+
     auto slixRoots = getSlixRoots();
     auto layers = std::vector<GarFuse>{};
     auto packages = *cliPackages;
@@ -102,7 +104,9 @@ int main(int argc, char** argv) {
         if (!cliMountPoint) {
             throw std::runtime_error{"no mount point given"};
         }
-        app();
+        if (fork() == 0) {
+            app();
+        }
     } catch (std::exception const& e) {
         std::cerr << "error: " << e.what() << "\n";
     }
