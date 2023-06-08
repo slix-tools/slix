@@ -21,6 +21,3 @@ g++ build/obj/slix.cpp.o \
 
 g++ ${FLAGS} -c src/slix-ld.cpp -o build/obj/slix-ld.cpp.o -static
 g++ build/obj/slix-ld.cpp.o -o build/bin/slix-ld -static
-
-g++ ${FLAGS} -c src/packageAnalyzer.cpp -o build/obj/packageAnalyzer.cpp.o
-g++ build/obj/packageAnalyzer.cpp.o -lfuse -o build/bin/packageAnalyzer
