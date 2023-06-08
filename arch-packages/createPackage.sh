@@ -99,7 +99,7 @@ version=$(pacman -Qi ${pkg} \
     | tr '\n' ' ' \
     | awk '{print $3}')
 
-../build/bin/archive ${target}
+../build/bin/slix archive --input ${target} --output ${target}.gar
 hash=$(sha256sum -b ${target}.gar | awk '{print $1}')
 destFile="${target}@${version}-$hash.gar"
 if [ ! -e "${destFile}" ]; then
