@@ -1,17 +1,5 @@
-#include "utils.h"
-#include "GarFuse.h"
-#include "MyFuse.h"
-#include "InteractiveProcess.h"
-
-#include <atomic>
 #include <clice/clice.h>
-#include <csignal>
-#include <filesystem>
-#include <functional>
 #include <iostream>
-#include <memory>
-#include <sstream>
-#include <thread>
 
 namespace {
 auto cliHelp = clice::Argument { .arg      = {"--help"},
