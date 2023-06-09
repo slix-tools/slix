@@ -23,13 +23,12 @@ mkdir -p ${root}
 echo -n "" > ${target}/dependencies.txt
 while [ ${#@} -gt 0 ]; do
     d="$1"
-    p="$(find ${SLIX_ROOT} | grep $d'@' || true)"
+    p="$(slix search $d'@')"
     if [ -z "${p}" ]; then
         echo "$pkg dependency $d is missing"
         exit 1
     fi
-    d=$(realpath --relative-to ${SLIX_ROOT} $p)
-    echo $d >> ${target}/dependencies.txt
+    echo $p >> ${target}/dependencies.txt
     shift
 done
 
@@ -99,7 +98,7 @@ version=$(pacman -Qi ${pkg} \
     | tr '\n' ' ' \
     | awk '{print $3}')
 
-../build/bin/slix archive --input ${target} --output ${target}.gar
+slix archive --input ${target} --output ${target}.gar
 hash=$(sha256sum -b ${target}.gar | awk '{print $1}')
 destFile="${target}@${version}-$hash.gar"
 if [ ! -e "${destFile}" ]; then

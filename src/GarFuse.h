@@ -43,19 +43,14 @@ struct GarFuse {
                 auto ct = reader.readContent(buffer.data(), buffer.size(), offset);
                 buffer.resize(ct);
                 for (auto part : std::views::split(buffer, '\n')) {
-//                for (auto part : split(buffer, '\n')) {
                     auto v = std::string_view{&*part.begin(), part.size()};
                     auto s = std::string(v);
                     if (s.empty()) continue;
-                    dependencies.push_back(rootPath.parent_path() / s);
-                    //std::cout << "found dependency: " << s << "\n";
+                    dependencies.push_back(s);
                 }
-
-                //std::cout << "loaded dependencies: " << buffer << "\n";
                 continue;
             }
             auto name = entry->name.substr(rootfs.size());
-            //std::cout << "adding: " << name << "\n";
             if (name.empty()) name = "/";
             entries.try_emplace(std::move(name), std::move(*entry));
         }
