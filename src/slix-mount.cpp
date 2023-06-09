@@ -43,7 +43,7 @@ auto searchPackagePath(std::vector<std::filesystem::path> const& slixRoots, std:
             }
         }
     }
-    return name;
+    return {};
 }
 
 auto getSlixRoots() -> std::vector<std::filesystem::path> {
@@ -65,8 +65,6 @@ void app() {
 
 
     {
-        std::signal(SIGHUP, [](int) {}); // ignore hangup signal
-
         auto slixRoots = getSlixRoots();
         auto layers = std::vector<GarFuse>{};
         auto packages = *cliPackages;
@@ -80,12 +78,23 @@ void app() {
                 std::cout << "layer " << layers.size() << " - ";
             }
             auto path = searchPackagePath(slixRoots, input);
+            if (path.empty()) {
+                auto msg = std::string{"Could not find package \""} + input.string() + "\". Searched in paths: ";
+                for (auto r : slixRoots) {
+                    msg += r.string() + ", ";
+                }
+                if (slixRoots.size()) {
+                    msg = msg.substr(0, msg.size()-2);
+                }
+                throw std::runtime_error(msg);
+            }
             auto const& fuse = layers.emplace_back(path, cliVerbose);
             for (auto const& d : fuse.dependencies) {
                 packages.push_back(d);
             }
         }
 
+        std::signal(SIGHUP, [](int) {}); // ignore hangup signal
         static auto onExit = std::function<void(int)>{};
         std::signal(SIGINT, [](int signal) { if (onExit) { onExit(signal); } });
 
