@@ -63,39 +63,42 @@ void app() {
 
     if (fork() != 0) return;
 
-    std::signal(SIGHUP, [](int) {}); // ignore hangup signal
 
-    auto slixRoots = getSlixRoots();
-    auto layers = std::vector<GarFuse>{};
-    auto packages = *cliPackages;
-    auto addedPackages = std::unordered_set<std::string>{};
-    while (!packages.empty()) {
-        auto input = std::filesystem::path{packages.back()};
-        packages.pop_back();
-        if (addedPackages.contains(input)) continue;
-        addedPackages.insert(input);
-        if (cliVerbose) {
-            std::cout << "layer " << layers.size() << " - ";
+    {
+        std::signal(SIGHUP, [](int) {}); // ignore hangup signal
+
+        auto slixRoots = getSlixRoots();
+        auto layers = std::vector<GarFuse>{};
+        auto packages = *cliPackages;
+        auto addedPackages = std::unordered_set<std::string>{};
+        while (!packages.empty()) {
+            auto input = std::filesystem::path{packages.back()};
+            packages.pop_back();
+            if (addedPackages.contains(input)) continue;
+            addedPackages.insert(input);
+            if (cliVerbose) {
+                std::cout << "layer " << layers.size() << " - ";
+            }
+            auto path = searchPackagePath(slixRoots, input);
+            auto const& fuse = layers.emplace_back(path, cliVerbose);
+            for (auto const& d : fuse.dependencies) {
+                packages.push_back(d);
+            }
         }
-        auto path = searchPackagePath(slixRoots, input);
-        auto const& fuse = layers.emplace_back(path, cliVerbose);
-        for (auto const& d : fuse.dependencies) {
-            packages.push_back(d);
-        }
+
+        static auto onExit = std::function<void(int)>{};
+        std::signal(SIGINT, [](int signal) { if (onExit) { onExit(signal); } });
+
+        auto fuseFS = MyFuse{std::move(layers), cliVerbose, *cliMountPoint};
+        std::jthread thread;
+        onExit = [&](int) {
+            thread = std::jthread{[&]() {
+                std::this_thread::sleep_for(std::chrono::milliseconds{100});
+                fuseFS.close();
+            }};
+        };
+        fuseFS.loop();
     }
-
-    static auto onExit = std::function<void(int)>{};
-    std::signal(SIGINT, [](int signal) { if (onExit) { onExit(signal); } });
-
-    auto fuseFS = MyFuse{std::move(layers), cliVerbose, *cliMountPoint};
-    std::jthread thread;
-    onExit = [&](int) {
-        thread = std::jthread{[&]() {
-            std::this_thread::sleep_for(std::chrono::milliseconds{100});
-            fuseFS.close();
-        }};
-    };
-    fuseFS.loop();
     exit(0);
 }
 }
