@@ -2,7 +2,12 @@
 
 mkdir -p build/{obj,bin}
 FLAGS="-std=c++20 -D_FILE_OFFSET_BITS=64 -isystem libs/clice/src"
-FLAGS="${FLAGS} -ggdb -O0"
+
+if [ "${BUILD_TYPE}" == "release" ]; then
+    FLAGS="${FLAGS} -O2 -DNDEBUG -s"
+else
+    FLAGS="${FLAGS} -ggdb -O0"
+fi
 
 g++ ${FLAGS} -c src/slix-archive.cpp -o build/obj/slix-archive.cpp.o
 g++ ${FLAGS} -c src/slix-mount.cpp -o build/obj/slix-mount.cpp.o
