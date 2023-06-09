@@ -52,12 +52,14 @@ void app() {
     if (!std::filesystem::exists(std::filesystem::path{mountPoint} / "slix-lock")) {
         auto binary  = std::filesystem::canonical("/proc/self/exe");
 
-        auto call = std::string{binary.string() + " --verbose mount --mount " + mountPoint + " -p"};
+        auto call = binary.string();
+        if (cliVerbose) call += " --verbose";
+        call += " mount --mount " + mountPoint + " -p";
         for (auto p : *cliPackages) {
             call += " " + p;
         }
         if (cliVerbose) {
-            std::cout << "trying to call " << call << "\n";
+            std::cout << "call mount " << call << "\n";
         }
         std::system(call.c_str());
     }
@@ -67,12 +69,8 @@ void app() {
         ifs.open(mountPoint + "/slix-lock");
     }
 
-    auto argvStr = std::vector<std::string>{"/usr/bin/env"};
-    for (auto const& c : *cliCommand) {
-        argvStr.push_back(c);
-    }
-
-    auto argv = std::vector<char const*>{};
+    auto argvStr = std::vector<std::string>{*cliCommand};
+    auto argv = std::vector<char const*>{"/usr/bin/env"};
     for (auto const& s : argvStr) {
         argv.emplace_back(s.c_str());
     }
@@ -85,6 +83,15 @@ void app() {
         envp.push_back(e.c_str());
     }
     envp.push_back(nullptr);
+
+    if (cliVerbose) {
+        std::cout << "calling shell";
+        for (auto a : argv) {
+            if (a == nullptr) continue;
+            std::cout << " " << a;
+        }
+        std::cout << "\n";
+    }
 
     execvpe(argv[0], (char**)argv.data(), (char**)envp.data());
     exit(127);
