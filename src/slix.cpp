@@ -8,7 +8,13 @@ auto cliHelp = clice::Argument { .arg      = {"--help"},
 };
 }
 
+void slix_script_main(std::string script);
+
 int main(int argc, char** argv) {
+    // by pass verything, if called via slix-script sym link
+    if (argc == 2 and std::string{argv[0]} == "slix-script") {
+        slix_script_main(argv[1]);
+    }
     try {
         if (auto failed = clice::parse(argc, argv); failed) {
             std::cerr << "parsing failed: " << *failed << "\n";

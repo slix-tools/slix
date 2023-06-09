@@ -42,5 +42,6 @@ void app() {
     for (auto const& r : results) {
         std::cout << r.string() << "\n";
     }
+    exit(0);
 }
 }

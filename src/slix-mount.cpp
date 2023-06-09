@@ -38,6 +38,8 @@ auto searchPackagePath(std::vector<std::filesystem::path> const& slixRoots, std:
             auto filename = pkg.path().filename();
             if (filename.string().starts_with(name + "@")) {
                 return pkg.path();
+            } else if (filename == name) {
+                return pkg.path();
             }
         }
     }
@@ -94,5 +96,6 @@ void app() {
         }};
     };
     fuseFS.loop();
+    exit(0);
 }
 }

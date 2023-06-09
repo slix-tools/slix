@@ -37,10 +37,6 @@ auto cliMountPoint = clice::Argument{ .parent = &cli,
                                       .value = std::string{},
 };
 
-
-
-std::atomic_bool finish{false};
-
 void app() {
     auto mountPoint = [&]() -> std::string {
         if (cliMountPoint) {
