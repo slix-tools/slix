@@ -44,7 +44,9 @@ struct MyFuse {
                     stbuf->st_nlink = 0;
                     stbuf->st_mode = S_IFREG;
                     stbuf->st_size = 0;
-                    std::cout << "gettattr " << "\n";
+                    if (self().verbose) {
+                        std::cout << "gettattr " << "\n";
+                    }
                     return 0;
                 }
                 return self().getattr_callback(path, stbuf);
@@ -62,7 +64,9 @@ struct MyFuse {
             .open     = [](char const* path, fuse_file_info* fi) {
                 if (path == std::string_view{"/slix-lock"}) {
                     self().connectedClients += 1;
-                    std::cout << "connected Clients (+1): " << self().connectedClients << "\n";
+                    if (self().verbose) {
+                        std::cout << "connected Clients (+1): " << self().connectedClients << "\n";
+                    }
                     return 0;
                 }
                 return self().open_callback(path, fi);
@@ -76,7 +80,9 @@ struct MyFuse {
                     if (self().connectedClients == 0) {
                         raise(SIGINT);
                     }
-                    std::cout << "connected Clients (-1): " << self().connectedClients << "\n";
+                    if (self().verbose) {
+                        std::cout << "connected Clients (-1): " << self().connectedClients << "\n";
+                    }
                     return 0;
                 }
                 return self().release_callback(path, fi);
