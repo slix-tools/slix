@@ -76,7 +76,9 @@ void slix_script_main(std::string script) {
     if (!std::filesystem::exists(std::filesystem::path{mountPoint} / "slix-lock")) {
         auto binary  = std::filesystem::canonical("/proc/self/exe");
 
-        auto call = std::string{binary.string() + " --verbose mount --mount " + mountPoint + " -p"};
+        auto call = binary.string();
+        if (cliVerbose) call += " --verbose";
+        call += " mount --fork --mount " + mountPoint + " -p";
         for (auto p : packages) {
             call += " " + p;
         }
