@@ -5,7 +5,7 @@ set -Eeuo pipefail
 pkg=${1}
 shift
 
-deps=${1}
+deps="${1}"
 shift
 
 target=${pkg}
@@ -34,15 +34,13 @@ mkdir -p ${root}
 
 # check dependencies
 echo -n "" > ${target}/dependencies.txt
-while [ ${#@} -gt 0 ]; do
-    d="$1"
+for d in $deps; do
     p="$(slix search $d'@')"
     if [ -z "${p}" ]; then
         echo "$pkg dependency $d is missing"
         exit 1
     fi
     echo $p >> ${target}/dependencies.txt
-    shift
 done
 
 pacman -Ql ${pkg} | awk '{ print $2; }' | (
