@@ -32,8 +32,8 @@ auto cliMountPoint = clice::Argument{ .parent = &cli,
 };
 
 
-auto searchPackagePath(std::vector<std::filesystem::path> const& slixRoots, std::string const& name) -> std::filesystem::path {
-    for (auto p : slixRoots) {
+auto searchPackagePath(std::vector<std::filesystem::path> const& slixPkgPaths, std::string const& name) -> std::filesystem::path {
+    for (auto p : slixPkgPaths) {
         for (auto pkg : std::filesystem::directory_iterator{p}) {
             auto filename = pkg.path().filename();
             if (filename.string().starts_with(name + "@")) {
@@ -52,7 +52,7 @@ void app() {
     }
 
     if (fork() == 0) {
-        auto slixRoots = getSlixRoots();
+        auto slixPkgPaths = getSlixPkgPaths();
         auto layers = std::vector<GarFuse>{};
         auto packages = *cliPackages;
         auto addedPackages = std::unordered_set<std::string>{};
@@ -64,13 +64,13 @@ void app() {
             if (cliVerbose) {
                 std::cout << "layer " << layers.size() << " - ";
             }
-            auto path = searchPackagePath(slixRoots, input);
+            auto path = searchPackagePath(slixPkgPaths, input);
             if (path.empty()) {
                 auto msg = std::string{"Could not find package \""} + input.string() + "\". Searched in paths: ";
-                for (auto r : slixRoots) {
+                for (auto r : slixPkgPaths) {
                     msg += r.string() + ", ";
                 }
-                if (slixRoots.size()) {
+                if (slixPkgPaths.size()) {
                     msg = msg.substr(0, msg.size()-2);
                 }
                 throw std::runtime_error(msg);

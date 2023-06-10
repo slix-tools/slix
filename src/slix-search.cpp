@@ -14,9 +14,9 @@ auto cli = clice::Argument{ .arg    = "search",
                                    .cb     = app,
 };
 
-auto searchPackagePath(std::vector<std::filesystem::path> const& slixRoots, std::string const& name) -> std::set<std::filesystem::path> {
+auto searchPackagePath(std::vector<std::filesystem::path> const& slixPkgPaths, std::string const& name) -> std::set<std::filesystem::path> {
     auto results = std::set<std::filesystem::path>{};
-    for (auto p : slixRoots) {
+    for (auto p : slixPkgPaths) {
         for (auto pkg : std::filesystem::directory_iterator{p}) {
             auto filename = pkg.path().filename();
             if (filename.string().starts_with(name)) {
@@ -28,8 +28,8 @@ auto searchPackagePath(std::vector<std::filesystem::path> const& slixRoots, std:
 }
 
 void app() {
-    auto slixRoots = getSlixRoots();
-    auto results = searchPackagePath(slixRoots, *cli);
+    auto slixPkgPaths = getSlixPkgPaths();
+    auto results = searchPackagePath(slixPkgPaths, *cli);
     for (auto const& r : results) {
         std::cout << r.string() << "\n";
     }

@@ -6,13 +6,15 @@ pkg=${1}
 target=${1}
 shift
 
-if [ -z ${SLIX_ROOT} ]; then
-    echo "SLIX_ROOT not set"
+if [ -z ${SLIX_PKG_PATHS} ]; then
+    echo "SLIX_PKG_PATHS not set"
     exit
 fi
 
 # check if the package itself exists
-if [ $(find ${SLIX_ROOT} | grep "/${pkg}@" | wc -l) -gt 0 ]; then
+# !TODO SLIX_PKG_PATHS could be multiple packages
+if [ $(find ${SLIX_PKG_PATHS} | grep "/${pkg}@" | wc -l) -gt 0 ]; then
+    echo "${pkg} already build"
     exit
 fi
 
@@ -107,7 +109,8 @@ if [ ! -e "${destFile}" ]; then
         cat ${target}/dependencies.txt | grep Missing.gar
         rm ${target}.gar
     else
-        mv ${target}.gar ${SLIX_ROOT}/${destFile}
+        # !TODO SLIX_PKG_PATHS could be multiple paths....
+        mv ${target}.gar ${SLIX_PKG_PATHS}/${destFile}
         echo "created ${destFile}"
     fi
 else
