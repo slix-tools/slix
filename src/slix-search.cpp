@@ -1,4 +1,5 @@
 #include "slix.h"
+#include "utils.h"
 
 #include <clice/clice.h>
 #include <filesystem>
@@ -24,16 +25,6 @@ auto searchPackagePath(std::vector<std::filesystem::path> const& slixRoots, std:
         }
     }
     return results;
-}
-
-auto getSlixRoots() -> std::vector<std::filesystem::path> {
-    auto ptr = std::getenv("SLIX_ROOT");
-    if (!ptr) throw std::runtime_error("unknown SLIX_ROOT");
-    auto paths = std::vector<std::filesystem::path>{};
-    for (auto part : std::views::split(std::string_view{ptr}, ':')) {
-        paths.emplace_back(std::string_view{part.begin(), part.size()});
-    }
-    return paths;
 }
 
 void app() {
