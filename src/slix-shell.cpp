@@ -77,7 +77,9 @@ void app() {
     argv.push_back(nullptr);
 
     auto _envp = std::vector<std::string>{"PATH=" + mountPoint + "/usr/bin",
-                                          "LD_LIBRARY_PATH=" + mountPoint + "/usr/lib"};
+                                          "LD_LIBRARY_PATH=" + mountPoint + "/usr/lib",
+                                          "SLIX_ROOT=" + mountPoint,
+    };
     auto envp = std::vector<char const*>{};
     for (auto& e : _envp) {
         envp.push_back(e.c_str());
