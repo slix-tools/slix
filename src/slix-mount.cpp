@@ -59,57 +59,54 @@ void app() {
     }
 
     if (cliFork) {
-        if (fork() != 0) exit(0);
+        if (fork() != 0) return;
     }
 
-    {
-        auto slixPkgPaths = getSlixPkgPaths();
-        auto layers = std::vector<GarFuse>{};
-        auto packages = *cliPackages;
-        auto addedPackages = std::unordered_set<std::string>{};
-        while (!packages.empty()) {
-            auto input = std::filesystem::path{packages.back()};
-            packages.pop_back();
-            if (addedPackages.contains(input)) continue;
-            addedPackages.insert(input);
-            if (cliVerbose) {
-                std::cout << "layer " << layers.size() << " - ";
-            }
-            auto path = searchPackagePath(slixPkgPaths, input);
-            if (path.empty()) {
-                auto msg = std::string{"Could not find package \""} + input.string() + "\". Searched in paths: ";
-                for (auto r : slixPkgPaths) {
-                    msg += r.string() + ", ";
-                }
-                if (slixPkgPaths.size()) {
-                    msg = msg.substr(0, msg.size()-2);
-                }
-                throw std::runtime_error(msg);
-            }
-            auto const& fuse = layers.emplace_back(path, cliVerbose);
-            for (auto const& d : fuse.dependencies) {
-                packages.push_back(d);
-            }
+    auto slixPkgPaths = getSlixPkgPaths();
+    auto layers = std::vector<GarFuse>{};
+    auto packages = *cliPackages;
+    auto addedPackages = std::unordered_set<std::string>{};
+    while (!packages.empty()) {
+        auto input = std::filesystem::path{packages.back()};
+        packages.pop_back();
+        if (addedPackages.contains(input)) continue;
+        addedPackages.insert(input);
+        if (cliVerbose) {
+            std::cout << "layer " << layers.size() << " - ";
         }
-
-        static auto onExit = std::function<void(int)>{};
-        if (cliFork) {
-            std::signal(SIGHUP, [](int) {}); // ignore hangup signal
-            std::signal(SIGINT, [](int) {});
-        } else {
-            std::signal(SIGINT, [](int signal) { if (onExit) { onExit(signal); } });
+        auto path = searchPackagePath(slixPkgPaths, input);
+        if (path.empty()) {
+            auto msg = std::string{"Could not find package \""} + input.string() + "\". Searched in paths: ";
+            for (auto r : slixPkgPaths) {
+                msg += r.string() + ", ";
+            }
+            if (slixPkgPaths.size()) {
+                msg = msg.substr(0, msg.size()-2);
+            }
+            throw std::runtime_error(msg);
         }
-
-        auto fuseFS = MyFuse{std::move(layers), cliVerbose, *cliMountPoint};
-        std::jthread thread;
-        onExit = [&](int) {
-            thread = std::jthread{[&]() {
-                std::this_thread::sleep_for(std::chrono::milliseconds{100});
-                fuseFS.close();
-            }};
-        };
-        fuseFS.loop();
+        auto const& fuse = layers.emplace_back(path, cliVerbose);
+        for (auto const& d : fuse.dependencies) {
+            packages.push_back(d);
+        }
     }
-    exit(0);
+
+    static auto onExit = std::function<void(int)>{};
+    if (cliFork) {
+        std::signal(SIGHUP, [](int) {}); // ignore hangup signal
+        std::signal(SIGINT, [](int) {});
+    } else {
+        std::signal(SIGINT, [](int signal) { if (onExit) { onExit(signal); } });
+    }
+
+    auto fuseFS = MyFuse{std::move(layers), cliVerbose, *cliMountPoint};
+    std::jthread thread;
+    onExit = [&](int) {
+        thread = std::jthread{[&]() {
+            std::this_thread::sleep_for(std::chrono::milliseconds{100});
+            fuseFS.close();
+        }};
+    };
+    fuseFS.loop();
 }
 }

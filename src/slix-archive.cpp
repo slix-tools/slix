@@ -46,6 +46,5 @@ void app() {
     auto wfs = fsx::Writer{*cliOutput};
     addFolder(path, path, wfs);
     wfs.close();
-    exit(0);
 }
 }
