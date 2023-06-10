@@ -7,7 +7,7 @@ namespace {
 void app();
 
 auto cli = clice::Argument{ .arg    = "archive",
-                            .desc   = "mounts a shell environment",
+                            .desc   = "creates a gar file",
                             .cb     = app,
 };
 
