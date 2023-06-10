@@ -5,6 +5,7 @@ set -Eeuo pipefail
 pkg=${1}
 shift
 
+SLIX_PKG_PATHS=${SLIX_PKG_PATHS:-${HOME}/.config/slix/packages}
 if [ -z ${SLIX_PKG_PATHS} ]; then
     echo "SLIX_PKG_PATHS not set"
     exit
