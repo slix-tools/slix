@@ -16,4 +16,6 @@ for d in $deps; do
         bash pkg-$d.sh
     fi
 done
-./createPackage.sh ${name} ${deps}
+
+./preparePackage.sh ${name} "${deps}"
+./finalizePackage.sh ${name}
