@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+slix-ld-gcc --sysroot ${SLIX_ROOT} "$@"
