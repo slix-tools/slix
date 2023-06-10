@@ -78,7 +78,7 @@ struct MyFuse {
                 if (path == std::string_view{"/slix-lock"}) {
                     self().connectedClients -= 1;
                     if (self().connectedClients == 0) {
-                        raise(SIGINT);
+                        raise(SIGUSR1);
                     }
                     if (self().verbose) {
                         std::cout << "connected Clients (-1): " << self().connectedClients << "\n";

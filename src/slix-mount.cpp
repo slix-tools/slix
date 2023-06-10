@@ -98,6 +98,8 @@ void app() {
     } else {
         std::signal(SIGINT, [](int signal) { if (onExit) { onExit(signal); } });
     }
+    std::signal(SIGUSR1, [](int signal) { if (onExit) { onExit(signal); } });
+
 
     auto fuseFS = MyFuse{std::move(layers), cliVerbose, *cliMountPoint};
     std::jthread thread;
