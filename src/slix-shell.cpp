@@ -54,7 +54,7 @@ void app() {
 
         auto call = binary.string();
         if (cliVerbose) call += " --verbose";
-        call += " mount --mount " + mountPoint + " -p";
+        call += " mount --fork --mount " + mountPoint + " -p";
         for (auto p : *cliPackages) {
             call += " " + p;
         }

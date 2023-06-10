@@ -30,6 +30,10 @@ auto cliMountPoint = clice::Argument{ .parent = &cli,
                                       .desc = "path to the mount point",
                                       .value = std::string{},
 };
+auto cliFork = clice::Argument{ .parent = &cli,
+                                .arg  = "--fork",
+                                .desc = "fork program to run in the background (also ignores SIGHUP)",
+};
 
 
 auto searchPackagePath(std::vector<std::filesystem::path> const& slixPkgPaths, std::string const& name) -> std::filesystem::path {
@@ -50,8 +54,15 @@ void app() {
     if (!cliMountPoint) {
         throw std::runtime_error{"no mount point given"};
     }
+    if (!std::filesystem::exists(*cliMountPoint)) {
+        std::filesystem::create_directories(*cliMountPoint);
+    }
 
-    if (fork() == 0) {
+    if (cliFork) {
+        if (fork() != 0) exit(0);
+    }
+
+    {
         auto slixPkgPaths = getSlixPkgPaths();
         auto layers = std::vector<GarFuse>{};
         auto packages = *cliPackages;
@@ -81,7 +92,9 @@ void app() {
             }
         }
 
-        std::signal(SIGHUP, [](int) {}); // ignore hangup signal
+        if (cliFork) {
+            std::signal(SIGHUP, [](int) {}); // ignore hangup signal
+        }
         static auto onExit = std::function<void(int)>{};
         std::signal(SIGINT, [](int signal) { if (onExit) { onExit(signal); } });
 
