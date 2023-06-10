@@ -92,11 +92,12 @@ void app() {
             }
         }
 
+        static auto onExit = std::function<void(int)>{};
         if (cliFork) {
             std::signal(SIGHUP, [](int) {}); // ignore hangup signal
+        } else {
+            std::signal(SIGINT, [](int signal) { if (onExit) { onExit(signal); } });
         }
-        static auto onExit = std::function<void(int)>{};
-        std::signal(SIGINT, [](int signal) { if (onExit) { onExit(signal); } });
 
         auto fuseFS = MyFuse{std::move(layers), cliVerbose, *cliMountPoint};
         std::jthread thread;
