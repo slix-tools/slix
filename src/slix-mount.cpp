@@ -95,6 +95,7 @@ void app() {
         static auto onExit = std::function<void(int)>{};
         if (cliFork) {
             std::signal(SIGHUP, [](int) {}); // ignore hangup signal
+            std::signal(SIGINT, [](int) {});
         } else {
             std::signal(SIGINT, [](int signal) { if (onExit) { onExit(signal); } });
         }
