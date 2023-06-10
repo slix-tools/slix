@@ -51,10 +51,7 @@ void app() {
         throw std::runtime_error{"no mount point given"};
     }
 
-    if (fork() != 0) return;
-
-
-    {
+    if (fork() == 0) {
         auto slixRoots = getSlixRoots();
         auto layers = std::vector<GarFuse>{};
         auto packages = *cliPackages;
