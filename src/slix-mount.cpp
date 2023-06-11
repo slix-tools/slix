@@ -16,8 +16,8 @@
 namespace {
 void app();
 auto cli = clice::Argument{ .arg    = "mount",
-                                   .desc   = "mounts a shell environment",
-                                   .cb     = app,
+                            .desc   = "mounts a shell environment",
+                            .cb     = app,
 };
 
 auto cliPackages = clice::Argument{ .parent = &cli,

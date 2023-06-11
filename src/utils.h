@@ -22,14 +22,16 @@ inline auto create_temp_dir() -> std::filesystem::path {
     throw std::runtime_error{"failed creating temporary directory"};
 }
 
+inline auto getSlixConfigPath() -> std::filesystem::path {
+    auto ptr = std::getenv("XDG_CONFIG_HOME");
+    if (ptr) return ptr + std::string{"/slix"};
+    ptr = std::getenv("HOME");
+    if (ptr) return ptr + std::string{".config/slix"};
+    throw std::runtime_error{"unknown HOME and XDG_CONFIG_HOME"};
+}
+
 inline auto getSlixPkgPaths() -> std::vector<std::filesystem::path> {
-    auto packagePath = [&]() -> std::string {
-        auto ptr = std::getenv("XDG_CONFIG_HOME");
-        if (ptr) return ptr + std::string{"/slix/packages"};
-        ptr = std::getenv("HOME");
-        if (ptr) return ptr + std::string{".config/slix/packages"};
-        throw std::runtime_error{"unknown HOME and XDG_CONFIG_HOME"};
-    }();
+    auto packagePath = getSlixConfigPath() / "packages";
     auto paths = std::vector<std::filesystem::path>{packagePath};
     return paths;
 }
