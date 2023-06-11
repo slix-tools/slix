@@ -7,4 +7,5 @@ cp build/bin/slix-ld slix-ld-package/rootfs/usr/bin
 ./build/bin/slix archive --input slix-ld-package --output slix-ld-package.gar
 
 hash=$(sha256sum -b slix-ld-package.gar | awk '{print $1}')
-mv slix-ld-package.gar slix-ld@1.0.0-${hash}.gar
+mkdir -p ${HOME}/.config/slix/packages
+mv slix-ld-package.gar ${HOME}/.config/slix/packages/slix-ld@1.0.0-${hash}.gar

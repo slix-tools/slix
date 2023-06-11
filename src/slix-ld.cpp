@@ -14,6 +14,13 @@ int main(int argc, char** argv) {
         std::cout << "redirecting: " << p << "\n";
         std::cout << std::filesystem::canonical("/proc/self/exe") << "\n";
     }
+    auto slixRoot = [&]() -> std::string {
+        if (auto ptr = std::getenv("SLIX_ROOT"); ptr) {
+            return ptr;
+        }
+        std::cout << "SLIX_ROOT not set, abort\n";
+        exit(127);
+    }();
     if (!is_symlink(p)) {
         std::cout << "not a symlink, you don't want to execute this directly\n";
         exit(127);
@@ -37,19 +44,17 @@ int main(int argc, char** argv) {
         }
     }
 
-    // extracting slix-path
-    auto binP  = p.parent_path(); // path to /tmp/slix-fs-xyz/usr/bin
-    auto usrP  = binP.parent_path(); // path to /tmp/slix-fs-xyz/usr
-    auto slixP = usrP.parent_path(); // path to /tmp/slix-fs-xyz
+    auto argv0 = p.filename().string();
+    auto newBP = slixRoot + ("/usr/bin/slix-ld-" + argv0);
 
-    auto str = std::vector<char*>{};
-    auto newBP = binP / ("slix-ld-" + p.filename().string());
+    auto dynamicLoader = slixRoot + "/usr/lib/ld-linux-x86-64.so.2";
 
-    auto dynamicLoader = usrP / "lib"  / "ld-linux-x86-64.so.2";
+    auto argv2 = std::vector<char const*>{};
+    argv2.push_back(dynamicLoader.c_str());
+    argv2.push_back("--argv0");
+    argv2.push_back(argv0.c_str());
 
-    auto argv2 = std::vector<char*>{};
-    argv2.push_back((char*)dynamicLoader.c_str());
-    argv2.push_back((char*)newBP.c_str());
+    argv2.push_back(newBP.c_str());
     for (size_t i{1}; i < argc; ++i) {
         argv2.push_back(argv[i]);
     }
@@ -63,6 +68,5 @@ int main(int argc, char** argv) {
             std::cout << " - " << a << "\n";
         }
     }
-    return execv(dynamicLoader.c_str(), argv2.data());
-
+    return execv(argv2[0], (char**)argv2.data());
 }
