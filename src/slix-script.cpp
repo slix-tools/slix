@@ -105,6 +105,12 @@ void slix_script_main(std::string script) {
     for (auto& e : _envp) {
         envp.push_back(e.c_str());
     }
+    for (auto e = environ; *e != nullptr; ++e) {
+        if (std::string_view{*e}.starts_with("PATH=")) continue;
+        if (std::string_view{*e}.starts_with("LD_LIBRARY_PATH=")) continue;
+        if (std::string_view{*e}.starts_with("SLIX_ROOT=")) continue;
+        envp.push_back(*e);
+    }
     envp.push_back(nullptr);
 
     execvpe(argv[0], (char**)argv.data(), (char**)envp.data());
