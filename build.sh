@@ -10,20 +10,16 @@ if [ "${BUILD_TYPE:-debug}" == "release" ]; then
 else
     FLAGS="${FLAGS} -ggdb -O0"
 fi
-
-g++ ${FLAGS} -c src/slix-archive.cpp -o build/obj/slix-archive.cpp.o
-g++ ${FLAGS} -c src/slix-mount.cpp -o build/obj/slix-mount.cpp.o
-g++ ${FLAGS} -c src/slix-script.cpp -o build/obj/slix-script.cpp.o
-g++ ${FLAGS} -c src/slix-search.cpp -o build/obj/slix-search.cpp.o
-g++ ${FLAGS} -c src/slix-shell.cpp -o build/obj/slix-shell.cpp.o
+cmds="archive index mount script search shell sync update"
+objs=""
+for cmd in ${cmds}; do
+    g++ ${FLAGS} -c src/slix-${cmd}.cpp -o build/obj/slix-${cmd}.cpp.o
+    objs="${objs} build/obj/slix-${cmd}.cpp.o"
+done
 g++ ${FLAGS} -c src/slix.cpp -o build/obj/slix.cpp.o
 
 g++ build/obj/slix.cpp.o \
-    build/obj/slix-archive.cpp.o \
-    build/obj/slix-mount.cpp.o \
-    build/obj/slix-script.cpp.o \
-    build/obj/slix-search.cpp.o \
-    build/obj/slix-shell.cpp.o \
+    ${objs} \
     -lfuse -lfmt -o build/bin/slix
 
 ln -fs slix build/bin/slix-script

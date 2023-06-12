@@ -1,5 +1,6 @@
 #include "slix.h"
 #include "utils.h"
+#include "PackageIndex.h"
 
 #include <clice/clice.h>
 #include <filesystem>
@@ -9,29 +10,44 @@
 namespace {
 void app();
 auto cli = clice::Argument{ .arg    = "search",
-                                   .desc   = "search localy for available slix packages",
-                                   .value  = std::string{},
-                                   .cb     = app,
+                            .desc   = "search localy for available slix packages",
+                            .value  = std::string{},
+                            .cb     = app,
 };
 
-auto searchPackagePath(std::vector<std::filesystem::path> const& slixPkgPaths, std::string const& name) -> std::set<std::filesystem::path> {
-    auto results = std::set<std::filesystem::path>{};
+auto installedPackages(std::vector<std::filesystem::path> const& slixPkgPaths) -> std::unordered_set<std::string> {
+    auto results = std::unordered_set<std::string>{};
     for (auto p : slixPkgPaths) {
         for (auto pkg : std::filesystem::directory_iterator{p}) {
-            auto filename = pkg.path().filename();
-            if (filename.string().starts_with(name)) {
-                results.insert(filename);
-            }
+            results.insert(pkg.path().filename().string());
         }
     }
     return results;
 }
 
+
 void app() {
-    auto slixPkgPaths = getSlixPkgPaths();
-    auto results = searchPackagePath(slixPkgPaths, *cli);
-    for (auto const& r : results) {
-        std::cout << r.string() << "\n";
+    auto path = getSlixConfigPath() / "upstreams";
+    if (!exists(path)) {
+        throw std::runtime_error{"missing path: " + path.string()};
+    }
+
+    auto slixPkgPaths      = getSlixPkgPaths();
+    auto istPkgs = installedPackages(slixPkgPaths);
+
+
+    for (auto const& e : std::filesystem::directory_iterator{path}) {
+        auto index = PackageIndex{};
+        index.loadFile(e.path());
+        for (auto const& [key, info] : index.packages) {
+            if (key.starts_with(*cli)) {
+                std::cout << key;
+                if (istPkgs.contains(key)) {
+                    std::cout << " (installed)";
+                }
+                std::cout << "\n";
+            }
+        }
     }
 }
 }

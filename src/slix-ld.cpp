@@ -2,7 +2,6 @@
 #include <unistd.h>
 #include <vector>
 #include <filesystem>
-//#include <fstream>
 
 int main(int argc, char** argv) {
     auto p = std::filesystem::path{argv[0]};
