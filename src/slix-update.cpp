@@ -22,7 +22,8 @@ void app() {
             config.loadFile(e.path());
             if (!config.valid()) throw std::runtime_error{"invalid config " + e.path().string()};
 
-            if (config.type == "file") {
+            if (config.type == "ignore") {
+            } else if (config.type == "file") {
                 if (!std::filesystem::exists(config.path)) {
                     throw std::runtime_error{"unknown upstream 'file' path '" + config.path + "'"};
                 }
@@ -33,6 +34,11 @@ void app() {
                 std::filesystem::copy_file(source, dest, std::filesystem::copy_options::overwrite_existing);
 
                 std::cout << "read " << (config.path + "/index.db") << "\n";
+            } else if (config.type == "https") {
+                auto source = config.path + "/index.db";
+                auto dest   = e.path().string() + ".db";
+                auto call = "curl \"" + source + "\" -o \"" + dest + "\"";
+                std::system(call.c_str());
             } else {
                 throw std::runtime_error{"unknown upstream type: " + config.type};
             }

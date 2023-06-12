@@ -32,9 +32,8 @@ void app() {
         throw std::runtime_error{"missing path: " + path.string()};
     }
 
-    auto slixPkgPaths      = getSlixPkgPaths();
-    auto istPkgs = installedPackages(slixPkgPaths);
-
+    auto slixPkgPaths = getSlixPkgPaths();
+    auto istPkgs      = installedPackages(slixPkgPaths);
 
     for (auto const& e : std::filesystem::directory_iterator{path}) {
         auto index = PackageIndex{};

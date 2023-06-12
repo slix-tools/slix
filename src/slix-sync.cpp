@@ -18,12 +18,25 @@ auto cli = clice::Argument{ .arg    = "sync",
                             .cb     = app,
 };
 
+auto installedPackages(std::vector<std::filesystem::path> const& slixPkgPaths) -> std::unordered_set<std::string> {
+    auto results = std::unordered_set<std::string>{};
+    for (auto p : slixPkgPaths) {
+        for (auto pkg : std::filesystem::directory_iterator{p}) {
+            results.insert(pkg.path().filename().string());
+        }
+    }
+    return results;
+}
 
 void app() {
     auto path = getSlixConfigPath() / "upstreams";
     if (!exists(path)) {
         throw std::runtime_error{"missing path: " + path.string()};
     }
+
+
+    auto slixPkgPaths = getSlixPkgPaths();
+    auto istPkgs      = installedPackages(slixPkgPaths);
 
     auto reqPkgs = std::unordered_set<std::string>{};
     auto openPackages = std::set<std::string>{};
@@ -88,6 +101,7 @@ void app() {
 
     // install all packages
     for (auto p : reqPkgs) {
+        if (istPkgs.contains(p)) continue; // already installed
         [&]() {
             for (auto const& [path, index] : indices) {
                 if (index.packages.contains(p)) {
@@ -97,12 +111,25 @@ void app() {
                     config.loadFile(config_path);
 
                     if (!config.valid()) throw std::runtime_error{"invalid config " + config_path.string()};
+                    if (config.type == "ignore") continue;
 
                     std::cout << "found " << p << " at " << path << "\n";
                     if (config.type == "file") {
-                        auto source = std::string{config.path + "/" + p};
+                        auto source = std::filesystem::path{config.path} / p;
                         auto dest   = getSlixConfigPath() / "packages" / p;
                         std::filesystem::copy_file(source, dest, std::filesystem::copy_options::overwrite_existing);
+                    } else if (config.type == "https") {
+                        p += ".zst";
+                        auto source = std::filesystem::path{config.path} / p;
+                        auto dest   = getSlixConfigPath() / "packages" / p;
+                        {
+                            auto call = "curl \"" + source.string() + "\" -o \"" + dest.string() + "\"";
+                            std::system(call.c_str());
+                        }
+                        {
+                            auto call = "zstd -d --rm " + dest.string();
+                            std::system(call.c_str());
+                        }
                     } else {
                         throw std::runtime_error{"unknown upstream type " + config.type};
                     }
