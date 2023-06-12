@@ -29,21 +29,19 @@ for d in $deps; do
         bash pkg-$d.sh
     fi
 done
-
 root=${target}/rootfs
 mkdir -p ${root}
 
 # check dependencies
 echo -n "" > ${target}/dependencies.txt
 for d in $deps; do
-    p="$(slix search $d'@')"
+    p=$(find ${SLIX_PKG_PATHS} | grep "/${d}@" || true)
     if [ -z "${p}" ]; then
         echo "$pkg dependency $d is missing"
         exit 1
     fi
     echo $p >> ${target}/dependencies.txt
 done
-
 pacman -Ql ${pkg} | awk '{ print $2; }' | (
     while IFS='$' read -r line; do
         if [ -d $line ] && [ ! -h $line ]; then
