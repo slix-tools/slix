@@ -4,9 +4,9 @@
 ; git-subrepo command. See https://github.com/ingydotnet/git-subrepo#readme
 ;
 [subrepo]
-	remote = https://github.com/SGSSGene/clice.git
-	branch = main
-	commit = 449bac245ce13de1241217d7fef72968e3d7e74b
-	parent = a700deb3e38e073941c4f4fa827d525b209cb7ce
+	remote = git@github.com:SGSSGene/clice.git
+	branch = fix
+	commit = d5135983f5ea90e5689a94cfa7b26e9e26fd0a5b
+	parent = c7b62723f4f14583efd6f5158333e3a1e2e4eef8
 	method = merge
 	cmdver = 0.4.6
