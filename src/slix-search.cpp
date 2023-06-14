@@ -41,7 +41,7 @@ void app() {
         for (auto const& [key, info] : index.packages) {
             if (key.starts_with(*cli)) {
                 std::cout << key;
-                if (istPkgs.contains(key)) {
+                if (istPkgs.contains(key) && cliVerbose) {
                     std::cout << " (installed)";
                 }
                 std::cout << "\n";

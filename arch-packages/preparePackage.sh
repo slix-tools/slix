@@ -10,17 +10,8 @@ shift
 
 target=${pkg}
 
-
-SLIX_PKG_PATHS=${SLIX_PKG_PATHS:-${HOME}/.config/slix/packages}
-if [ -z ${SLIX_PKG_PATHS} ]; then
-    echo "SLIX_PKG_PATHS not set"
-    exit
-fi
-
-# check if the package itself exists
-# !TODO SLIX_PKG_PATHS could be multiple packages
-if [ $(find ${SLIX_PKG_PATHS} | grep "/${pkg}@" | wc -l) -gt 0 ]; then
-    echo "${pkg} already build"
+if [ -n "$(slix search "${pkg}@")" ]; then
+    echo "${pkg} already build, known as $(slix search "${pkg}@")"
     exit 1
 fi
 
