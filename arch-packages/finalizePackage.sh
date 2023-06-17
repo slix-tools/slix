@@ -13,17 +13,14 @@ if [ -z "${SLIX_INDEX}" ]; then
     exit 1;
 fi
 
+if [ -e "allreadyBuild.txt" ] && [ $(cat allreadyBuild.txt | grep "^${archpkg}$" | wc -l) -gt 0 ]; then
+    exit 0
+fi
+
 version=$(pacman -Qi ${archpkg} \
     | grep -P "^Version" \
     | tr '\n' ' ' \
     | awk '{print $3}')
-
-latest=$(slix index info ${SLIX_INDEX} --name "${name}" | tail -n 1);
-aname="$(echo ${latest} | cut -d '#' -f 1)"
-if [ "${aname}" == "${name}@${version}" ]; then
-    echo "${name} already build, known as ${latest}"
-    exit 0
-fi
 
 target=${name}
 
@@ -36,5 +33,6 @@ else
     slix index add ${SLIX_INDEX} --package ${target}.gar --name "${target}" --version "${version}"
     rm ${target}.gar
 fi
+echo ${archpkg} >> allreadyBuild.txt
 
 rm -rf ${target}
