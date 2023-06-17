@@ -58,7 +58,7 @@ void app() {
     // Load Package
     auto package = GarFuse{*cliPackage, false};
 
-    auto hash = fmt::format("{:x}", fmt::join(sha256sum(*cliPackage), ""));
+    auto hash = fmt::format("{:02x}", fmt::join(sha256sum(*cliPackage), ""));
     auto fileName = fmt::format("{}@{}#{}.gar", *cliName, *cliVersion, hash);
 
     // Check if all required packages are available
