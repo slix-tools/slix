@@ -87,7 +87,7 @@ void app() {
         }
         auto const& fuse = layers.emplace_back(path, cliVerbose);
         for (auto const& d : fuse.dependencies) {
-            packages.push_back(d);
+            packages.push_back(d + ".gar");
         }
     }
 

@@ -38,13 +38,10 @@ void app() {
     for (auto const& e : std::filesystem::directory_iterator{path}) {
         auto index = PackageIndex{};
         index.loadFile(e.path());
-        for (auto const& [key, info] : index.packages) {
-            if (key.starts_with(*cli)) {
-                std::cout << key;
-                if (istPkgs.contains(key) && cliVerbose) {
-                    std::cout << " (installed)";
-                }
-                std::cout << "\n";
+        for (auto const& [key, infos] : index.packages) {
+            if (key.starts_with(*cli) and !infos.empty()) {
+                auto const& info = infos.back();
+                fmt::print("{}@{}#{}.gar\n", key, info.version, info.hash);
             }
         }
     }
