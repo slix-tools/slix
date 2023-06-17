@@ -1,4 +1,4 @@
 name=fuse-common
 archpkg=${name}
-deps="slix-ld"
+deps=""
 source pkg.sh

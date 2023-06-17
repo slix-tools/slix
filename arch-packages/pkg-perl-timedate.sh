@@ -1,4 +1,4 @@
 name=perl-timedate
 archpkg=${name}
-deps="slix-ld perl"
+deps="perl"
 source pkg.sh
