@@ -1,3 +1,3 @@
 name=libxtst
-deps="slix-ld libxext libxi libxfixes"
+deps="libxext libxi libxfixes"
 source pkg.sh

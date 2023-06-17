@@ -1,3 +1,3 @@
 name=gmp
-deps="slix-ld gcc-libs bash"
+deps="gcc-libs bash"
 source pkg.sh

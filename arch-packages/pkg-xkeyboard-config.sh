@@ -1,3 +1,3 @@
 name=xkeyboard-config
-deps="slix-ld"
+deps=""
 source pkg.sh

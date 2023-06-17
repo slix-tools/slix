@@ -1,3 +1,3 @@
 name=hicolor-icon-theme
-deps="slix-ld "
+deps=""
 source pkg.sh

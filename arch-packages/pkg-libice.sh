@@ -1,3 +1,3 @@
 name=libice
-deps="slix-ld glibc xorgproto"
+deps="glibc xorgproto"
 source pkg.sh

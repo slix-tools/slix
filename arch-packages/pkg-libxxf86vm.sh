@@ -1,3 +1,3 @@
 name=libxxf86vm
-deps="slix-ld libxext"
+deps="libxext"
 source pkg.sh

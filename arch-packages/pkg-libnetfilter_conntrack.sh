@@ -1,3 +1,3 @@
 name=libnetfilter_conntrack
-deps="slix-ld libnfnetlink libmnl"
+deps="libnfnetlink libmnl"
 source pkg.sh

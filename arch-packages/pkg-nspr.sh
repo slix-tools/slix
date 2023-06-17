@@ -1,3 +1,3 @@
 name=nspr
-deps="slix-ld glibc bash"
+deps="glibc bash"
 source pkg.sh

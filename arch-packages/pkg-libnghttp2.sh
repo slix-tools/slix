@@ -1,3 +1,3 @@
 name=libnghttp2
-deps="slix-ld glibc"
+deps="glibc"
 source pkg.sh

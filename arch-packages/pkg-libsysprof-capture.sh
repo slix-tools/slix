@@ -1,3 +1,3 @@
 name=libsysprof-capture
-deps="slix-ld "
+deps=""
 source pkg.sh

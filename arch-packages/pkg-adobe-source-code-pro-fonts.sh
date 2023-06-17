@@ -1,3 +1,3 @@
 name=adobe-source-code-pro-fonts
-deps="slix-ld"
+deps=""
 source pkg.sh

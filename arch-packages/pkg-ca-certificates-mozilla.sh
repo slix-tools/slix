@@ -1,3 +1,3 @@
 name=ca-certificates-mozilla
-deps="slix-ld ca-certificates-utils"
+deps="ca-certificates-utils"
 source pkg.sh

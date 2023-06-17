@@ -1,3 +1,3 @@
 name=libunwind
-deps="slix-ld xz zlib"
+deps="xz zlib"
 source pkg.sh

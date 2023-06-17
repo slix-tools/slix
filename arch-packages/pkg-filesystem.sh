@@ -1,3 +1,3 @@
 name=filesystem
-deps="slix-ld iana-etc"
+deps="iana-etc"
 source pkg.sh

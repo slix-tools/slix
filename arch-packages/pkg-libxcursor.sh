@@ -1,3 +1,3 @@
 name=libxcursor
-deps="slix-ld libxfixes libxrender default-cursors"
+deps="libxfixes libxrender default-cursors"
 source pkg.sh

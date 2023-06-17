@@ -1,3 +1,3 @@
 name=libvdpau
-deps="slix-ld libxext"
+deps="libxext"
 source pkg.sh

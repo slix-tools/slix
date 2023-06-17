@@ -1,3 +1,3 @@
 name=cantarell-fonts
-deps="slix-ld"
+deps=""
 source pkg.sh

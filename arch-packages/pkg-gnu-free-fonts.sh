@@ -1,3 +1,3 @@
 name=gnu-free-fonts
-deps="slix-ld"
+deps=""
 source pkg.sh

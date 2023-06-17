@@ -1,3 +1,3 @@
 name=libnftnl
-deps="slix-ld libmnl"
+deps="libmnl"
 source pkg.sh

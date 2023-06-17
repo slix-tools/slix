@@ -39,7 +39,7 @@ fi
 mkdir -p ${root}
 
 # check dependencies
-echo -n "" > ${target}/dependencies.txt
+echo -n "" > ${target}/dependencies_unsorted.txt
 for d in $deps; do
     latest="$(slix index info ${SLIX_INDEX} --name ${d} | tail -n 1 || true)"
     if [ -z "${latest}" ]; then
@@ -53,7 +53,7 @@ cat ${target}/dependencies_unsorted.txt | sort | uniq > ${target}/dependencies.t
 rm ${target}/dependencies_unsorted.txt
 
 
-export requiresSlixLD=0
+echo "0" > ${target}/requiresSlixLD.txt
 pacman -Ql ${pkg} | awk '{ print $2; }' | (
     while IFS='$' read -r line; do
         if [ -d $line ] && [ ! -h $line ]; then
@@ -90,7 +90,8 @@ pacman -Ql ${pkg} | awk '{ print $2; }' | (
                         file=$(basename ${line})
                         mv ${root}/usr/bin/${file} ${root}/usr/bin/slix-ld-${file}
                         ln -sr ${root}/usr/bin/slix-ld ${root}/usr/bin/${file}
-                        export requiresSlixLD=1
+                        echo "1" > ${target}/requiresSlixLD.txt
+
                     fi
 
                 # patch shell scripts
@@ -115,6 +116,9 @@ pacman -Ql ${pkg} | awk '{ print $2; }' | (
         fi
     done
 )
+requiresSlixLD=$(cat ${target}/requiresSlixLD.txt)
+rm ${target}/requiresSlixLD.txt
+
 
 hasLdD=0
 for d in $deps; do
@@ -124,5 +128,6 @@ for d in $deps; do
 done
 
 if [ ${hasLdD} -ne ${requiresSlixLD} ]; then
-#    echo "requirement of slix-ld for ${pkg} unclear: ${hasLdD} and ${requiresSlixLD}"
+    echo "requirement of slix-ld for ${pkg} unclear: ${hasLdD} and ${requiresSlixLD}"
+    true
 fi

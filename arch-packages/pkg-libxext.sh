@@ -1,3 +1,3 @@
 name=libxext
-deps="slix-ld libx11"
+deps="libx11"
 source pkg.sh

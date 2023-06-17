@@ -1,3 +1,3 @@
 name=libverto
-deps="slix-ld glibc libevent"
+deps="glibc libevent"
 source pkg.sh

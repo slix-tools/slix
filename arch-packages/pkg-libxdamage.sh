@@ -1,3 +1,3 @@
 name=libxdamage
-deps="slix-ld libxfixes"
+deps="libxfixes"
 source pkg.sh

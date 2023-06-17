@@ -1,3 +1,3 @@
 name=libldap
-deps="slix-ld libsasl"
+deps="libsasl"
 source pkg.sh

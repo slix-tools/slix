@@ -1,3 +1,3 @@
 name=libxi
-deps="slix-ld libxext libxfixes"
+deps="libxext libxfixes"
 source pkg.sh

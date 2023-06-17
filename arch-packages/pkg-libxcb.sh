@@ -1,3 +1,3 @@
 name=libxcb
-deps="slix-ld xcb-proto libxdmcp libxau"
+deps="xcb-proto libxdmcp libxau"
 source pkg.sh

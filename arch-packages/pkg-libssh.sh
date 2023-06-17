@@ -1,3 +1,3 @@
 name=libssh
-deps="slix-ld zlib openssl"
+deps="zlib openssl"
 source pkg.sh

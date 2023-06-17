@@ -1,3 +1,3 @@
 name=xcb-proto
-deps="slix-ld"
+deps=""
 source pkg.sh

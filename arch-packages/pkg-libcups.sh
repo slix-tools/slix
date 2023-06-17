@@ -1,3 +1,3 @@
 name=libcups
-deps="slix-ld gnutls avahi"
+deps="gnutls avahi"
 source pkg.sh

@@ -1,3 +1,3 @@
 name=libusb
-deps="slix-ld glibc systemd-libs"
+deps="glibc systemd-libs"
 source pkg.sh

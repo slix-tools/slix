@@ -1,3 +1,3 @@
 name=libxft
-deps="slix-ld fontconfig libxrender"
+deps="fontconfig libxrender"
 source pkg.sh

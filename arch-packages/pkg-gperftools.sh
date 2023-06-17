@@ -1,3 +1,3 @@
 name=gperftools
-deps="slix-ld perl libunwind"
+deps="perl libunwind"
 source pkg.sh

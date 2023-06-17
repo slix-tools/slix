@@ -1,3 +1,3 @@
 name=hidapi
-deps="slix-ld libusb systemd-libs"
+deps="libusb systemd-libs"
 source pkg.sh

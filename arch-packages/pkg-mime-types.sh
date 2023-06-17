@@ -1,3 +1,3 @@
 name=mime-types
-deps="slix-ld"
+deps=""
 source pkg.sh

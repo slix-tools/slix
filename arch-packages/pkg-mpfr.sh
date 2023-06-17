@@ -1,3 +1,3 @@
 name=mpfr
-deps="slix-ld glibc gmp"
+deps="glibc gmp"
 source pkg.sh

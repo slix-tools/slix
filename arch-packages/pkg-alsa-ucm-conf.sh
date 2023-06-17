@@ -1,3 +1,3 @@
 name=alsa-ucm-conf
-deps="slix-ld "
+deps=""
 source pkg.sh

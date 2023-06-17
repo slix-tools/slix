@@ -1,3 +1,3 @@
 name=vulkan-icd-loader
-deps="slix-ld glibc"
+deps="glibc"
 source pkg.sh

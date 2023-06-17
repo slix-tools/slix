@@ -1,3 +1,3 @@
 name=xorgproto
-deps="slix-ld "
+deps=""
 source pkg.sh

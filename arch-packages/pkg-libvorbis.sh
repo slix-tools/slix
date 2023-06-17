@@ -1,3 +1,3 @@
 name=libvorbis
-deps="slix-ld libogg"
+deps="libogg"
 source pkg.sh

@@ -1,3 +1,3 @@
 name=libmpc
-deps="slix-ld mpfr"
+deps="mpfr"
 source pkg.sh

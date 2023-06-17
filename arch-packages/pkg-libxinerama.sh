@@ -1,3 +1,3 @@
 name=libxinerama
-deps="slix-ld"
+deps=""
 source pkg.sh

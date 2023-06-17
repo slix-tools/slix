@@ -1,3 +1,3 @@
 name=libthai
-deps="slix-ld libdatrie"
+deps="libdatrie"
 source pkg.sh

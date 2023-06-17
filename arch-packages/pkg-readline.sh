@@ -1,3 +1,3 @@
 name=readline
-deps="slix-ld glibc ncurses"
+deps="glibc ncurses"
 source pkg.sh

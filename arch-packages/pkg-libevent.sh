@@ -1,3 +1,3 @@
 name=libevent
-deps="slix-ld openssl"
+deps="openssl"
 source pkg.sh

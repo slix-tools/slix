@@ -1,3 +1,3 @@
 name=libx11
-deps="slix-ld libxcb xorgproto"
+deps="libxcb xorgproto"
 source pkg.sh

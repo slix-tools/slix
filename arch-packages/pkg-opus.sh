@@ -1,3 +1,3 @@
 name=opus
-deps="slix-ld glibc"
+deps="glibc"
 source pkg.sh

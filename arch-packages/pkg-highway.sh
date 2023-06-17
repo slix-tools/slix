@@ -1,3 +1,3 @@
 name=highway
-deps="slix-ld gcc-libs"
+deps="gcc-libs"
 source pkg.sh

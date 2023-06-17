@@ -1,3 +1,3 @@
 name=libxrandr
-deps="slix-ld libxext libxrender"
+deps="libxext libxrender"
 source pkg.sh

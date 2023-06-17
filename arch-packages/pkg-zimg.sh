@@ -1,3 +1,3 @@
 name=zimg
-deps="slix-ld gcc-libs glibc"
+deps="gcc-libs glibc"
 source pkg.sh

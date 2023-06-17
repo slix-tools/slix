@@ -1,3 +1,3 @@
 name=libisl
-deps="slix-ld gmp"
+deps="gmp"
 source pkg.sh

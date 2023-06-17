@@ -1,3 +1,3 @@
 name=libpciaccess
-deps="slix-ld glibc zlib"
+deps="glibc zlib"
 source pkg.sh

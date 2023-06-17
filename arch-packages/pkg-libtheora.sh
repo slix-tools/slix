@@ -1,3 +1,3 @@
 name=libtheora
-deps="slix-ld libogg"
+deps="libogg"
 source pkg.sh

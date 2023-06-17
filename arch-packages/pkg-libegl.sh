@@ -1,3 +1,3 @@
 name=libegl
-deps="slix-ld libxext mesa"
+deps="libxext mesa"
 source pkg.sh
