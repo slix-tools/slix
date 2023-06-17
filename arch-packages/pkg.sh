@@ -4,8 +4,7 @@ if [ -z "${SLIX_INDEX}" ]; then
     echo "Set SLIX_INDEX to path of index.db"
     exit 1;
 fi
-
-version=$(pacman -Qi ${name} \
+version=$(pacman -Qi ${archpkg} \
     | grep -P "^Version" \
     | tr '\n' ' ' \
     | awk '{print $3}')
@@ -17,5 +16,5 @@ if [ "${pkgname}" == "${name}@${version}" ]; then
     exit 0
 fi
 
-./preparePackage.sh ${name} "${deps}"
-./finalizePackage.sh ${name}
+./preparePackage.sh ${name} ${archpkg} "${deps}"
+./finalizePackage.sh ${name} ${archpkg}

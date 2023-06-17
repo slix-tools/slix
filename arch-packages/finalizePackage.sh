@@ -2,7 +2,10 @@
 
 set -Eeuo pipefail
 
-pkg=${1}
+name=${1}
+shift
+
+archpkg=${1}
 shift
 
 if [ -z "${SLIX_INDEX}" ]; then
@@ -10,20 +13,19 @@ if [ -z "${SLIX_INDEX}" ]; then
     exit 1;
 fi
 
-version=$(pacman -Qi ${pkg} \
+version=$(pacman -Qi ${archpkg} \
     | grep -P "^Version" \
     | tr '\n' ' ' \
     | awk '{print $3}')
 
-latest=$(slix index info ${SLIX_INDEX} --name "${pkg}" | tail -n 1);
-name="$(echo ${latest} | cut -d '#' -f 1)"
-if [ "${name}" == "${pkg}@${version}" ]; then
-    echo "${pkg} already build, known as ${latest}"
+latest=$(slix index info ${SLIX_INDEX} --name "${name}" | tail -n 1);
+aname="$(echo ${latest} | cut -d '#' -f 1)"
+if [ "${aname}" == "${name}@${version}" ]; then
+    echo "${name} already build, known as ${latest}"
     exit 0
 fi
 
-
-target=${pkg}
+target=${name}
 
 slix archive --input ${target} --output ${target}.gar
 if [ $(cat ${target}/dependencies.txt | grep Missing.gar | wc -l) -ge 1 ]; then

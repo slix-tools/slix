@@ -1,4 +1,5 @@
 name=gcc
+archpkg=${name}
 deps="slix-ld gcc-libs binutils libmpc zstd libisl"
 
 ./preparePackage.sh "${name}" "${deps}"

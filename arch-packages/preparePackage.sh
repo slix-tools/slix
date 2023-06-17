@@ -2,28 +2,31 @@
 
 set -Eeuo pipefail
 
-pkg=${1}
+name=${1}
+shift
+
+archpkg=${1}
 shift
 
 deps="${1}"
 shift
 
-target=${pkg}
+target=${name}
 
 if [ -z "${SLIX_INDEX}" ]; then
     echo "Set SLIX_INDEX to path of index.db"
     exit 1;
 fi
 
-version=$(pacman -Qi ${pkg} \
+version=$(pacman -Qi ${archpkg} \
     | grep -P "^Version" \
     | tr '\n' ' ' \
     | awk '{print $3}')
 
-latest=$(slix index info ${SLIX_INDEX} --name "${pkg}" | tail -n 1);
+latest=$(slix index info ${SLIX_INDEX} --name "${name}" | tail -n 1);
 name="$(echo ${latest} | cut -d '#' -f 1)"
-if [ "${name}" == "${pkg}@${version}" ]; then
-    echo "${pkg} already build, known as ${latest}"
+if [ "${name}" == "${name}@${version}" ]; then
+    echo "${name} already build, known as ${latest}"
     exit 0
 fi
 
@@ -43,7 +46,7 @@ echo -n "" > ${target}/dependencies_unsorted.txt
 for d in $deps; do
     latest="$(slix index info ${SLIX_INDEX} --name ${d} | tail -n 1 || true)"
     if [ -z "${latest}" ]; then
-        echo "$pkg dependency $d is missing"
+        echo "$name dependency $d is missing"
         exit 1
     fi
     echo ${latest} >> ${target}/dependencies_unsorted.txt
@@ -54,7 +57,7 @@ rm ${target}/dependencies_unsorted.txt
 
 
 echo "0" > ${target}/requiresSlixLD.txt
-pacman -Ql ${pkg} | awk '{ print $2; }' | (
+pacman -Ql ${archpkg} | awk '{ print $2; }' | (
     while IFS='$' read -r line; do
         if [ -d $line ] && [ ! -h $line ]; then
             mkdir -p ${root}/${line:1}
@@ -128,6 +131,6 @@ for d in $deps; do
 done
 
 if [ ${hasLdD} -ne ${requiresSlixLD} ]; then
-    echo "requirement of slix-ld for ${pkg} unclear: ${hasLdD} and ${requiresSlixLD}"
+    echo "requirement of slix-ld for ${name} unclear: ${hasLdD} and ${requiresSlixLD}"
     true
 fi
