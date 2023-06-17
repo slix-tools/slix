@@ -10,29 +10,50 @@ shift
 
 target=${pkg}
 
-if [ -n "$(slix search "${pkg}@")" ]; then
-    echo "${pkg} already build, known as $(slix search "${pkg}@")"
-    exit 1
+if [ -z "${SLIX_INDEX}" ]; then
+    echo "Set SLIX_INDEX to path of index.db"
+    exit 1;
+fi
+
+version=$(pacman -Qi ${pkg} \
+    | grep -P "^Version" \
+    | tr '\n' ' ' \
+    | awk '{print $3}')
+
+latest=$(slix index info ${SLIX_INDEX} --name "${pkg}" | tail -n 1);
+name="$(echo ${latest} | cut -d '#' -f 1)"
+if [ "${name}" == "${pkg}@${version}" ]; then
+    echo "${pkg} already build, known as ${latest}"
+    exit 0
 fi
 
 for d in $deps; do
-    if [ "$d" != slix-ld ]; then
+    if [ -e pkg-$d.sh ]; then
         bash pkg-$d.sh
     fi
 done
 root=${target}/rootfs
+if [ -e ${root} ]; then
+    rm -rf "${root}"
+fi
 mkdir -p ${root}
 
 # check dependencies
 echo -n "" > ${target}/dependencies.txt
 for d in $deps; do
-    p=$(find ${SLIX_PKG_PATHS} | grep "/${d}@" || true)
-    if [ -z "${p}" ]; then
+    latest="$(slix index info ${SLIX_INDEX} --name ${d} | tail -n 1 || true)"
+    if [ -z "${latest}" ]; then
         echo "$pkg dependency $d is missing"
         exit 1
     fi
-    echo $p >> ${target}/dependencies.txt
+    echo ${latest} >> ${target}/dependencies_unsorted.txt
+    slix index info ${SLIX_INDEX} --name ${d} --dependencies >> ${target}/dependencies_unsorted.txt
 done
+cat ${target}/dependencies_unsorted.txt | sort | uniq > ${target}/dependencies.txt
+rm ${target}/dependencies_unsorted.txt
+
+
+export requiresSlixLD=0
 pacman -Ql ${pkg} | awk '{ print $2; }' | (
     while IFS='$' read -r line; do
         if [ -d $line ] && [ ! -h $line ]; then
@@ -69,6 +90,7 @@ pacman -Ql ${pkg} | awk '{ print $2; }' | (
                         file=$(basename ${line})
                         mv ${root}/usr/bin/${file} ${root}/usr/bin/slix-ld-${file}
                         ln -sr ${root}/usr/bin/slix-ld ${root}/usr/bin/${file}
+                        export requiresSlixLD=1
                     fi
 
                 # patch shell scripts
@@ -93,3 +115,14 @@ pacman -Ql ${pkg} | awk '{ print $2; }' | (
         fi
     done
 )
+
+hasLdD=0
+for d in $deps; do
+    if [ "$d" == "slix-ld" ]; then
+        hasLdD=1
+    fi
+done
+
+if [ ${hasLdD} -ne ${requiresSlixLD} ]; then
+#    echo "requirement of slix-ld for ${pkg} unclear: ${hasLdD} and ${requiresSlixLD}"
+fi

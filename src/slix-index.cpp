@@ -1,4 +1,5 @@
 #include "GarFuse.h"
+#include "slix-index.h"
 #include "slix.h"
 #include "utils.h"
 #include "PackageIndex.h"
@@ -12,7 +13,7 @@
 
 namespace {
 void app();
-auto cli = clice::Argument{ .arg    = "index",
+auto cli = clice::Argument{ .arg    = "index_old",
                             .desc   = "creates an index file over gar files",
                             .value  = std::string{},
                             .cb     = app,
@@ -47,7 +48,7 @@ void app() {
         }
         auto& pkg = index.packages[key];
         for (auto const& d : deps) {
-            pkg.dependencies.push_back(d);
+//            pkg.dependencies.push_back(d);
         }
     }
     index.storeFile(path/"index.db");

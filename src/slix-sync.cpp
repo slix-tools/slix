@@ -85,9 +85,10 @@ void app() {
         for (auto const& [key, info] : index.packages) {
             if (openPackages.contains(key)) {
                 openPackages.erase(key);
-                for (auto const& d : info.dependencies) {
+                //!TODO
+/*                for (auto const& d : info.dependencies) {
                     reqPkgs.insert(d);
-                }
+                }*/
             }
         }
     }
