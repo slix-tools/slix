@@ -129,8 +129,23 @@ void app() {
             p += ".gar.zst";
             auto source = std::filesystem::path{config.path} / p;
             auto dest   = getSlixConfigPath() / "packages" / p;
+            //!TODO requires much better url encoding
+            source = [](std::string input) -> std::string {
+                std::string output;
+                for (auto c : input) {
+                    if (c == '#') {
+                        output += "%23";
+                    } else {
+                        output += c;
+                    }
+                }
+                return output;
+            }(source);
             {
-                auto call = "curl \"" + source.string() + "\" -o \"" + dest.string() + "\"";
+                auto call = fmt::format("curl -s {} -o {}", source, dest);
+                if (cliVerbose) {
+                    fmt::print("calling \"{}\"\n", call);
+                }
                 std::system(call.c_str());
             }
             {
