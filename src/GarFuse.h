@@ -14,8 +14,6 @@
 #include <unordered_set>
 
 struct GarFuse {
-    std::filesystem::path rootPath;
-
     std::unordered_map<std::string, fsx::Reader::Entry> entries;
 
     fsx::Reader reader;
@@ -24,13 +22,12 @@ struct GarFuse {
 
     bool verbose;
 
-    GarFuse(std::filesystem::path rootPath_, bool _verbose)
-        : rootPath{std::move(rootPath_)}
-        , reader{rootPath}
+    GarFuse(std::filesystem::path pathToPackage, bool _verbose)
+        : reader{pathToPackage}
         , verbose{_verbose}
     {
         if (verbose) {
-            std::cout << "opening: " << rootPath << "\n";
+            std::cout << "opening: " << pathToPackage << "\n";
         }
 
         std::string rootfs = "rootfs";
@@ -118,12 +115,6 @@ struct GarFuse {
 
         auto ct = reader.readContent(buf, size, offset + offset_);
         return ct;
-/*        auto node = tree.findPath(path);
-        if (!node) return -ENOENT;
-
-        auto dataread = pread(fi->fh, buf, size, offset);
-        std::cout << "read " << path << " " << size << " " << dataread << " " << offset << "\n";
-        return dataread;*/
     }
     int readdir_callback(char const* path, void* buf, fuse_fill_dir_t filler, std::unordered_set<std::string>& satisfiedFiles) {
         auto entry = findEntry(path);
@@ -134,7 +125,6 @@ struct GarFuse {
 
         auto fpath = std::string_view{path};
 
-        //std::cout << "listing: " << path << " " << fpath << " (" << rootPath << "\n";
         std::string_view fpath2 = fpath;
         for (auto const& s : entries) {
             if (s.first.starts_with(fpath) && s.first.size() > fpath.size() + 1) {
@@ -151,17 +141,6 @@ struct GarFuse {
             }
         }
         return 0;
-/*        auto node = tree.findPath(path);
-        if (!node) return -ENOENT;
-
-        for (auto const& [child_name, child_node] : node->children) {
-            if (!satisfiedFiles.contains(child_name)) {
-                filler(buf, child_name.c_str(), nullptr, 0);
-                satisfiedFiles.emplace(child_name);
-            }
-        }
-        std::cout << "trying to read " << path << "\n";
-        return 0;*/
     }
 };
 

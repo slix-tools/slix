@@ -1,7 +1,8 @@
-#include "utils.h"
 #include "GarFuse.h"
 #include "MyFuse.h"
+#include "PackageIndex.h"
 #include "slix.h"
+#include "utils.h"
 
 #include <atomic>
 #include <clice/clice.h>
@@ -40,15 +41,24 @@ auto searchPackagePath(std::vector<std::filesystem::path> const& slixPkgPaths, s
     for (auto p : slixPkgPaths) {
         for (auto pkg : std::filesystem::directory_iterator{p}) {
             auto filename = pkg.path().filename();
-            if (filename.string().starts_with(name + "@")) {
-                return pkg.path();
-            } else if (filename == name) {
+            if (filename == name) {
                 return pkg.path();
             }
         }
     }
-    return {};
+    throw std::runtime_error{"couldn't find path for " + name};
 }
+
+auto installedPackages(std::vector<std::filesystem::path> const& slixPkgPaths) -> std::unordered_set<std::string> {
+    auto results = std::unordered_set<std::string>{};
+    for (auto p : slixPkgPaths) {
+        for (auto pkg : std::filesystem::directory_iterator{p}) {
+            results.insert(pkg.path().filename().string());
+        }
+    }
+    return results;
+}
+
 
 void app() {
     if (!cliMountPoint) {
@@ -58,41 +68,55 @@ void app() {
         std::filesystem::create_directories(*cliMountPoint);
     }
 
-    if (cliFork) {
-        if (fork() != 0) return;
+    auto path_upstreams = getSlixConfigPath() / "upstreams";
+    if (!exists(path_upstreams)) {
+        throw std::runtime_error{"missing path: " + path_upstreams.string()};
     }
 
     auto slixPkgPaths = getSlixPkgPaths();
+    auto istPkgs      = installedPackages(slixPkgPaths);
+
+    auto requiredPackages = std::unordered_set<std::string>{};
+    for (auto input : *cliPackages) {
+        auto [fullName, info] = [&]() -> std::tuple<std::string, PackageIndex::Info> {
+            for (auto const& e : std::filesystem::directory_iterator{path_upstreams}) {
+                auto index = PackageIndex{};
+                index.loadFile(e.path());
+                for (auto const& [key, infos] : index.packages) {
+                    for (auto const& info : infos) {
+                        auto s = fmt::format("{}@{}#{}", key, info.version, info.hash);
+                        if (key == input or s == input) {
+                            if (istPkgs.contains(s + ".gar")) {
+                                return {s, info};
+                            }
+                        }
+                    }
+                }
+            }
+            throw std::runtime_error{"can find any installed package for " + input};
+        }();
+        requiredPackages.insert(fullName);
+        for (auto const& d : info.dependencies) {
+            if (!istPkgs.contains(d + ".gar")) {
+                throw std::runtime_error{fmt::format("package {} requires {}, but {} couldn't be found", fullName, d, d)};
+            }
+            requiredPackages.insert(d);
+        }
+    }
+
+
     auto layers = std::vector<GarFuse>{};
-    auto packages = *cliPackages;
-    auto addedPackages = std::unordered_set<std::string>{};
-    while (!packages.empty()) {
-        auto input = std::filesystem::path{packages.back()};
-        packages.pop_back();
-        if (addedPackages.contains(input)) continue;
-        addedPackages.insert(input);
+    for (auto const& p : requiredPackages) {
         if (cliVerbose) {
-            std::cout << "layer " << layers.size() << " - ";
+            std::cout << "layer " << layers.size() << " - " << p << "\n";
         }
-        auto path = searchPackagePath(slixPkgPaths, input);
-        if (path.empty()) {
-            auto msg = std::string{"Could not find package \""} + input.string() + "\". Searched in paths: ";
-            for (auto r : slixPkgPaths) {
-                msg += r.string() + ", ";
-            }
-            if (slixPkgPaths.size()) {
-                msg = msg.substr(0, msg.size()-2);
-            }
-            throw std::runtime_error(msg);
-        }
-        auto const& fuse = layers.emplace_back(path, cliVerbose);
-        for (auto const& d : fuse.dependencies) {
-            packages.push_back(d + ".gar");
-        }
+        auto path = searchPackagePath(slixPkgPaths, p + ".gar");
+        layers.emplace_back(path, cliVerbose);
     }
 
     static auto onExit = std::function<void(int)>{};
     if (cliFork) {
+        if (fork() != 0) return;
         std::signal(SIGHUP, [](int) {}); // ignore hangup signal
         std::signal(SIGINT, [](int) {});
     } else {
