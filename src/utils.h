@@ -26,7 +26,7 @@ inline auto getSlixConfigPath() -> std::filesystem::path {
     auto ptr = std::getenv("XDG_CONFIG_HOME");
     if (ptr) return ptr + std::string{"/slix"};
     ptr = std::getenv("HOME");
-    if (ptr) return ptr + std::string{".config/slix"};
+    if (ptr) return ptr + std::string{"/.config/slix"};
     throw std::runtime_error{"unknown HOME and XDG_CONFIG_HOME"};
 }
 
