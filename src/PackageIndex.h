@@ -30,6 +30,7 @@ struct PackageIndex {
 
         auto ifs = std::ifstream{path, std::ios::binary};
         auto line = std::string{};
+        if (!ifs.good()) throw std::runtime_error{"trouble loading PackageIndex file: " + path.string()};
         while (std::getline(ifs, line)) {
             if (line.empty()) continue;
             if (line.starts_with("  - ")) {
