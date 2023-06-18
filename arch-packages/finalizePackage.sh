@@ -8,6 +8,9 @@ shift
 archpkg=${1}
 shift
 
+defaultcmd=${1}
+shift
+
 if [ -z "${SLIX_INDEX}" ]; then
     echo "Set SLIX_INDEX to path of index.db"
     exit 1;
@@ -23,6 +26,10 @@ version=$(pacman -Qi ${archpkg} \
     | awk '{print $3}')
 
 target=${name}
+
+if [ -n "${defaultcmd}" ]; then
+    echo "${defaultcmd}" > ${target}/defaultcmd.txt
+fi
 
 slix archive --input ${target} --output ${target}.gar
 if [ $(cat ${target}/dependencies.txt | grep Missing.gar | wc -l) -ge 1 ]; then

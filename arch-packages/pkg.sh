@@ -9,5 +9,8 @@ if [ -e "allreadyBuild.txt" ] && [ $(cat allreadyBuild.txt | grep "^${archpkg}$"
     exit 0
 fi
 
+defaultcmd=${defaultcmd:-}
+
+
 ./preparePackage.sh ${name} ${archpkg} "${deps}"
-./finalizePackage.sh ${name} ${archpkg}
+./finalizePackage.sh ${name} ${archpkg} "${defaultcmd}"

@@ -1,7 +1,8 @@
 name=firefox
 archpkg=${name}
+defaultcmd=firefox
 deps="slix-ld dbus-glib ffmpeg gtk3 libpulse libxt mime-types nss gnu-free-fonts sed bash util-linux coreutils"
-./preparePackage.sh "${name}" "${deps}"
+./preparePackage.sh "${name}" "${archpkg}" "${deps}"
 
 cp --remove-destination data/firefox/firefox ${name}/rootfs/usr/bin/firefox
-./finalizePackage.sh "${name}"
+./finalizePackage.sh "${name}" "${archpkg}" "${defaultcmd}"
