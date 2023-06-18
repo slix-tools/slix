@@ -83,7 +83,7 @@ pacman -Ql ${archpkg} | awk '{ print $2; }' | (
                      || [ "${t}" == "application/x-pie-executable" ]; then
                     if [[ ${line} =~ ^/usr/bin/[^/]*$ ]]; then
                         file=$(basename ${line})
-                        mv ${root}/usr/bin/${file} ${root}/usr/bin/slix-ld-${file}
+                        mv ${root}/usr/bin/${file} ${root}/usr/bin/.slix-ld-${file}
                         ln -sr ${root}/usr/bin/slix-ld ${root}/usr/bin/${file}
                         echo "1" > ${target}/requiresSlixLD.txt
 

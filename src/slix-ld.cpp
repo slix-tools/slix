@@ -5,7 +5,7 @@
 
 int main(int argc, char** argv) {
     auto p = std::filesystem::path{argv[0]};
-    p = std::filesystem::canonical("/proc/self/exe").parent_path() / p.filename();
+    p = std::filesystem::canonical("/proc/self/exe").parent_path().parent_path() / "bin" / p.filename();
 
     bool verbose = std::getenv("SLIX_LD_DEBUG") != nullptr;
 
@@ -44,14 +44,17 @@ int main(int argc, char** argv) {
     }
 
     auto argv0 = p.filename().string();
-    auto newBP = slixRoot + ("/usr/bin/slix-ld-" + argv0);
+    auto newBP = slixRoot + ("/usr/bin/.slix-ld-" + argv0);
 
     auto dynamicLoader = slixRoot + "/usr/lib/ld-linux-x86-64.so.2";
+    auto ld_library_path = slixRoot + "/usr/lib";
 
     auto argv2 = std::vector<char const*>{};
     argv2.push_back(dynamicLoader.c_str());
     argv2.push_back("--argv0");
     argv2.push_back(argv0.c_str());
+    argv2.push_back("--library-path");
+    argv2.push_back(ld_library_path.c_str());
 
     argv2.push_back(newBP.c_str());
     for (size_t i{1}; i < argc; ++i) {

@@ -74,7 +74,12 @@ void slix_script_main(std::string script) {
     auto mountPoint = create_temp_dir().string();
 
     if (!std::filesystem::exists(std::filesystem::path{mountPoint} / "slix-lock")) {
-        auto binary  = std::filesystem::canonical("/proc/self/exe");
+        if (cliVerbose) {
+            std::cout << "argv0: " << clice::argv0 << "\n";
+            std::cout << "self-exe: " << std::filesystem::canonical("/proc/self/exe") << "\n";
+        }
+        auto binary = std::filesystem::path{clice::argv0};
+        binary = std::filesystem::canonical("/proc/self/exe").parent_path().parent_path() / "bin" / binary.filename();
 
         auto call = binary.string();
         if (cliVerbose) call += " --verbose";
@@ -98,7 +103,6 @@ void slix_script_main(std::string script) {
     argv.push_back(nullptr);
 
     auto _envp = std::vector<std::string>{"PATH=" + mountPoint + "/usr/bin",
-                                          "LD_LIBRARY_PATH=" + mountPoint + "/usr/lib",
                                           "SLIX_ROOT=" + mountPoint,
     };
     auto envp = std::vector<char const*>{};
@@ -107,7 +111,6 @@ void slix_script_main(std::string script) {
     }
     for (auto e = environ; *e != nullptr; ++e) {
         if (std::string_view{*e}.starts_with("PATH=")) continue;
-        if (std::string_view{*e}.starts_with("LD_LIBRARY_PATH=")) continue;
         if (std::string_view{*e}.starts_with("SLIX_ROOT=")) continue;
         envp.push_back(*e);
     }
