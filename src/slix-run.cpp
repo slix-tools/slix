@@ -16,8 +16,8 @@
 
 namespace {
 void app();
-auto cli = clice::Argument{ .arg    = "shell",
-                            .desc   = "starts a slix shell",
+auto cli = clice::Argument{ .arg    = "run",
+                            .desc   = "starts a slix environment with specified packages",
                             .value  = std::vector<std::string>{},
                             .cb     = app,
 };
