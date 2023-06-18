@@ -15,7 +15,12 @@ auto cli = clice::Argument{ .parent = &cliIndex,
 
 void app() {
     auto index = PackageIndex{};
-    //!TODO must check if *cli is existing folder, or create it?
+    if (exists(*cli)) {
+        throw std::runtime_error{"path " + (*cli).string() + " already exists, abort"};
+    }
+    if (!std::filesystem::create_directory(*cli)) {
+        throw std::runtime_error{"failed creating directory " + (*cli).string() + ", abort"};
+    }
     index.storeFile(*cli / "index.db");
 }
 }
