@@ -10,7 +10,7 @@
 namespace {
 void app();
 auto cli = clice::Argument{ .arg    = "search",
-                            .desc   = "search localy for available slix packages",
+                            .desc   = "search locally for available slix packages",
                             .value  = std::vector<std::string>{},
                             .cb     = app,
 };
@@ -42,7 +42,7 @@ void app() {
             for (auto const& [key, infos] : index.packages) {
                 if (key.starts_with(pattern) and !infos.empty()) {
                     auto const& info = infos.back();
-                    fmt::print("{}@{}#{}.gar\n", key, info.version, info.hash);
+                    fmt::print("{}@{}#{}\n", key, info.version, info.hash);
                 }
             }
         }
