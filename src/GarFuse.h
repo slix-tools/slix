@@ -19,6 +19,7 @@ struct GarFuse {
     fsx::Reader reader;
 
     std::vector<std::string> dependencies;
+    std::vector<std::string> defaultCmd;
 
     bool verbose;
 
@@ -44,6 +45,24 @@ struct GarFuse {
                     auto s = std::string(v);
                     if (s.empty()) continue;
                     dependencies.push_back(s);
+                }
+                continue;
+            } else if (entry->name == "defaultcmd.txt") {
+                // special list with dependencies
+                auto const& [h, name, offset] = *entry;
+                auto buffer = std::string{};
+                buffer.resize(h.size);
+                auto ct = reader.readContent(buffer.data(), buffer.size(), offset);
+                buffer.resize(ct);
+                for (auto part : std::views::split(buffer, ' ')) {
+                    auto v = std::string_view{&*part.begin(), part.size()};
+                    auto s = std::string{};
+                    s.reserve(v.size());
+                    for (auto c : v) {
+                        if (c != '\n' && c != '\r') s += c;
+                    }
+                    if (s.empty()) continue;
+                    defaultCmd.push_back(s);
                 }
                 continue;
             }

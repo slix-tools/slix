@@ -2,6 +2,7 @@
 #include "MyFuse.h"
 #include "slix.h"
 #include "utils.h"
+#include "PackageIndex.h"
 
 #include <atomic>
 #include <clice/clice.h>
@@ -16,8 +17,9 @@
 namespace {
 void app();
 auto cli = clice::Argument{ .arg    = "shell",
-                                   .desc   = "starts a slix shell",
-                                   .cb     = app,
+                            .desc   = "starts a slix shell",
+                            .value  = std::vector<std::string>{},
+                            .cb     = app,
 };
 
 auto cliCommand = clice::Argument { .parent = &cli,
@@ -26,16 +28,33 @@ auto cliCommand = clice::Argument { .parent = &cli,
                                     .value = std::vector<std::string>{},
 };
 
-auto cliPackages = clice::Argument{ .parent = &cli,
-                                    .arg   = "-p",
-                                    .desc  = "packages to initiate inside the environment",
-                                    .value = std::vector<std::string>{},
-};
 auto cliMountPoint = clice::Argument{ .parent = &cli,
                                       .arg  = "--mount",
                                       .desc = "path to the mount point or if already in use, reuse",
                                       .value = std::string{},
 };
+
+auto searchPackagePath(std::vector<std::filesystem::path> const& slixPkgPaths, std::string const& name) -> std::filesystem::path {
+    for (auto p : slixPkgPaths) {
+        for (auto pkg : std::filesystem::directory_iterator{p}) {
+            auto filename = pkg.path().filename();
+            if (filename == name) {
+                return pkg.path();
+            }
+        }
+    }
+    throw std::runtime_error{"couldn't find path for " + name};
+}
+
+auto installedPackages(std::vector<std::filesystem::path> const& slixPkgPaths) -> std::unordered_set<std::string> {
+    auto results = std::unordered_set<std::string>{};
+    for (auto p : slixPkgPaths) {
+        for (auto pkg : std::filesystem::directory_iterator{p}) {
+            results.insert(pkg.path().filename().string());
+        }
+    }
+    return results;
+}
 
 void app() {
     auto mountPoint = [&]() -> std::string {
@@ -49,6 +68,17 @@ void app() {
         }
     }();
 
+    auto path_upstreams = getSlixConfigPath() / "upstreams";
+    if (!exists(path_upstreams)) {
+        throw std::runtime_error{"missing path: " + path_upstreams.string()};
+    }
+
+    auto slixPkgPaths = getSlixPkgPaths();
+    auto istPkgs      = installedPackages(slixPkgPaths);
+
+
+    auto cmd = *cliCommand;
+
     if (!std::filesystem::exists(std::filesystem::path{mountPoint} / "slix-lock")) {
         if (cliVerbose) {
             std::cout << "argv0: " << clice::argv0 << "\n";
@@ -60,7 +90,7 @@ void app() {
         auto call = binary.string();
         if (cliVerbose) call += " --verbose";
         call += " mount --fork --mount " + mountPoint + " -p";
-        for (auto p : *cliPackages) {
+        for (auto p : *cli) {
             call += " " + p;
         }
         if (cliVerbose) {
@@ -74,9 +104,42 @@ void app() {
         ifs.open(mountPoint + "/slix-lock");
     }
 
-    auto argvStr = std::vector<std::string>{*cliCommand};
+    // scan for first entry point (if cmd didn't set any thing)
+    if (cmd.empty()) {
+        for (auto input : *cli) {
+            // find name of package
+            auto [fullName, info] = [&]() -> std::tuple<std::string, PackageIndex::Info> {
+                for (auto const& e : std::filesystem::directory_iterator{path_upstreams}) {
+                    auto index = PackageIndex{};
+                    index.loadFile(e.path());
+                    for (auto const& [key, infos] : index.packages) {
+                        for (auto const& info : infos) {
+                            auto s = fmt::format("{}@{}#{}", key, info.version, info.hash);
+                            if (key == input or s == input) {
+                                if (istPkgs.contains(s + ".gar")) {
+                                    return {s, info};
+                                }
+                            }
+                        }
+                    }
+                }
+                throw std::runtime_error{"can find any installed package for " + input};
+            }();
+            // find package location
+            auto path = searchPackagePath(slixPkgPaths, fullName + ".gar");
+            auto fuse = GarFuse{path, false};
+            cmd = fuse.defaultCmd;
+            if (!cmd.empty()) break;
+        }
+    }
+
+    if (cmd.empty()) {
+        throw std::runtime_error{"no command given"};
+    }
+
+
     auto argv = std::vector<char const*>{"/usr/bin/env"};
-    for (auto const& s : argvStr) {
+    for (auto const& s : cmd) {
         argv.emplace_back(s.c_str());
     }
     argv.push_back(nullptr);
