@@ -116,7 +116,7 @@ void app() {
         return ptr;
     }();
 
-    if (PATH.empty()) {
+    if (PATH.empty() || !cliStack) {
         PATH = mountPoint + "/usr/bin";
     } else {
         PATH = mountPoint + "/usr/bin:" + PATH;
