@@ -53,3 +53,17 @@ inline auto installedPackages(std::vector<std::filesystem::path> const& slixPkgP
     }
     return results;
 }
+
+/** searches through paths for a package with exact name
+ */
+inline auto searchPackagePath(std::vector<std::filesystem::path> const& slixPkgPaths, std::string const& name) -> std::filesystem::path {
+    for (auto p : slixPkgPaths) {
+        for (auto pkg : std::filesystem::directory_iterator{p}) {
+            auto filename = pkg.path().filename();
+            if (filename == name) {
+                return pkg.path();
+            }
+        }
+    }
+    throw std::runtime_error{"couldn't find path for " + name};
+}

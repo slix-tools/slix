@@ -36,19 +36,6 @@ auto cliFork = clice::Argument{ .parent = &cli,
                                 .desc = "fork program to run in the background (also ignores SIGHUP)",
 };
 
-
-auto searchPackagePath(std::vector<std::filesystem::path> const& slixPkgPaths, std::string const& name) -> std::filesystem::path {
-    for (auto p : slixPkgPaths) {
-        for (auto pkg : std::filesystem::directory_iterator{p}) {
-            auto filename = pkg.path().filename();
-            if (filename == name) {
-                return pkg.path();
-            }
-        }
-    }
-    throw std::runtime_error{"couldn't find path for " + name};
-}
-
 void app() {
     if (!cliMountPoint) {
         throw std::runtime_error{"no mount point given"};
