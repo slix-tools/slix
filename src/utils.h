@@ -22,6 +22,9 @@ inline auto create_temp_dir() -> std::filesystem::path {
     throw std::runtime_error{"failed creating temporary directory"};
 }
 
+/**
+ * Path to the ~/.config/slix path
+ */
 inline auto getSlixConfigPath() -> std::filesystem::path {
     auto ptr = std::getenv("XDG_CONFIG_HOME");
     if (ptr) return ptr + std::string{"/slix"};
@@ -30,8 +33,23 @@ inline auto getSlixConfigPath() -> std::filesystem::path {
     throw std::runtime_error{"unknown HOME and XDG_CONFIG_HOME"};
 }
 
+/**
+ * returns a list of paths to search for installed packages
+ */
 inline auto getSlixPkgPaths() -> std::vector<std::filesystem::path> {
     auto packagePath = getSlixConfigPath() / "packages";
     auto paths = std::vector<std::filesystem::path>{packagePath};
     return paths;
+}
+
+/** returns a list of installed packages - including the trailing .gar
+ */
+inline auto installedPackages(std::vector<std::filesystem::path> const& slixPkgPaths) -> std::unordered_set<std::string> {
+    auto results = std::unordered_set<std::string>{};
+    for (auto p : slixPkgPaths) {
+        for (auto pkg : std::filesystem::directory_iterator{p}) {
+            results.insert(pkg.path().filename().string());
+        }
+    }
+    return results;
 }

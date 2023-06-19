@@ -20,16 +20,6 @@ auto cli = clice::Argument{ .arg    = "sync",
                             .cb     = app,
 };
 
-auto installedPackages(std::vector<std::filesystem::path> const& slixPkgPaths) -> std::unordered_set<std::string> {
-    auto results = std::unordered_set<std::string>{};
-    for (auto p : slixPkgPaths) {
-        for (auto pkg : std::filesystem::directory_iterator{p}) {
-            results.insert(pkg.path().filename().string());
-        }
-    }
-    return results;
-}
-
 void app() {
     auto path = getSlixConfigPath() / "upstreams";
     if (!exists(path)) {

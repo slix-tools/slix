@@ -52,16 +52,6 @@ auto searchPackagePath(std::vector<std::filesystem::path> const& slixPkgPaths, s
     throw std::runtime_error{"couldn't find path for " + name};
 }
 
-auto installedPackages(std::vector<std::filesystem::path> const& slixPkgPaths) -> std::unordered_set<std::string> {
-    auto results = std::unordered_set<std::string>{};
-    for (auto p : slixPkgPaths) {
-        for (auto pkg : std::filesystem::directory_iterator{p}) {
-            results.insert(pkg.path().filename().string());
-        }
-    }
-    return results;
-}
-
 void app() {
     auto mountPoint = [&]() -> std::string {
         if (cliMountPoint) {
