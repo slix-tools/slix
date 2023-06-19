@@ -21,21 +21,18 @@ auto cli = clice::Argument{ .arg    = "sync",
 };
 
 void app() {
-    auto pathUpstreams = getUpstreamsPath();
-    auto slixPkgPaths  = getSlixPkgPaths();
-    auto istPkgs       = installedPackages(slixPkgPaths);
+    auto slixPkgPaths   = getSlixPkgPaths();
+    auto istPkgs        = installedPackages(slixPkgPaths);
+    auto packageIndices = loadPackageIndices();
 
     // load all indices
     auto indices = std::map<std::string, PackageIndex>{};
     auto pkgToInfo = std::map<std::string, std::tuple<std::string, std::string, PackageIndex::Info const*>>{};
-    for (auto const& e : std::filesystem::directory_iterator{pathUpstreams}) {
-        if (e.path().extension() != ".db") continue;
-        auto& index = indices[e.path()];
-        index.loadFile(e.path());
-        for (auto const& [key, infos] : index.packages) {
+    for (auto const& [path, index] : packageIndices.indices) {
+       for (auto const& [key, infos] : index.packages) {
             for (auto const& info : infos) {
                 auto s = fmt::format("{}@{}#{}", key, info.version, info.hash);
-                pkgToInfo[s] = {e.path().string(), key, &info};
+                pkgToInfo[s] = {path.string(), key, &info};
             }
         }
     }
@@ -47,11 +44,8 @@ void app() {
         using Info = PackageIndex::Info;
         auto [key, info] = [&]() -> std::tuple<std::string, Info const*> {
             auto closeHits = std::map<std::string, std::tuple<std::string, Info const*>>{};
-            for (auto const& e : std::filesystem::directory_iterator{pathUpstreams}) {
-                if (e.path().extension() != ".db") continue;
-                auto& index = indices[e.path()];
-                for (auto const& [key, infos] : index.packages) {
-                    if (infos.empty()) continue;
+            for (auto const& [path, index] : packageIndices.indices) {
+               for (auto const& [key, infos] : index.packages) {
                     for (auto const& info : infos) {
                         auto s = fmt::format("{}@{}#{}", key, info.version, info.hash);
                         if (s == p) return {key, &info};

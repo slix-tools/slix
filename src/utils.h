@@ -1,4 +1,5 @@
 #pragma once
+#include "PackageIndex.h"
 
 #include <cstdlib>
 #include <filesystem>
@@ -78,4 +79,18 @@ inline auto searchPackagePath(std::vector<std::filesystem::path> const& slixPkgP
         }
     }
     throw std::runtime_error{"couldn't find path for " + name};
+}
+
+/**
+ * load all package indices
+ */
+inline auto loadPackageIndices() -> PackageIndices {
+    auto pathUpstreams = getUpstreamsPath();
+    auto res = PackageIndices{};
+    for (auto const& e : std::filesystem::directory_iterator{pathUpstreams}) {
+        if (e.path().extension() != ".db") continue;
+        auto& index = res.indices[e.path()];
+        index.loadFile(e.path());
+    }
+    return res;
 }

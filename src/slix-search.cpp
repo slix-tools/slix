@@ -16,21 +16,15 @@ auto cli = clice::Argument{ .arg    = "search",
 };
 
 void app() {
-    auto pathUpstreams = getUpstreamsPath();
-    auto slixPkgPaths  = getSlixPkgPaths();
-    auto istPkgs       = installedPackages(slixPkgPaths);
+    auto slixPkgPaths   = getSlixPkgPaths();
+    auto istPkgs        = installedPackages(slixPkgPaths);
+    auto packageIndices = loadPackageIndices();
 
     for (auto pattern : *cli) {
-        for (auto const& e : std::filesystem::directory_iterator{pathUpstreams}) {
-            auto index = PackageIndex{};
-            index.loadFile(e.path());
-            for (auto const& [key, infos] : index.packages) {
-                if (key.starts_with(pattern) and !infos.empty()) {
-                    auto const& info = infos.back();
-                    fmt::print("{}@{}#{}\n", key, info.version, info.hash);
-                }
-            }
-        }
+        auto opt = packageIndices.findLatest(pattern);
+        if (!opt) continue;
+        auto [path, index, key, info] = *opt;
+        fmt::print("{}@{}#{}\n", key, info->version, info->hash);
     }
 }
 }

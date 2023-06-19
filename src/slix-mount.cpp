@@ -44,16 +44,15 @@ void app() {
         std::filesystem::create_directories(*cliMountPoint);
     }
 
-    auto pathUpstreams = getUpstreamsPath();
-    auto slixPkgPaths  = getSlixPkgPaths();
-    auto istPkgs       = installedPackages(slixPkgPaths);
+    auto slixPkgPaths   = getSlixPkgPaths();
+    auto istPkgs        = installedPackages(slixPkgPaths);
+    auto packageIndices = loadPackageIndices();
+
 
     auto requiredPackages = std::unordered_set<std::string>{};
     for (auto input : *cliPackages) {
         auto [fullName, info] = [&]() -> std::tuple<std::string, PackageIndex::Info> {
-            for (auto const& e : std::filesystem::directory_iterator{pathUpstreams}) {
-                auto index = PackageIndex{};
-                index.loadFile(e.path());
+            for (auto const& [path, index] : packageIndices.indices) {
                 for (auto const& [key, infos] : index.packages) {
                     for (auto const& info : infos) {
                         auto s = fmt::format("{}@{}#{}", key, info.version, info.hash);

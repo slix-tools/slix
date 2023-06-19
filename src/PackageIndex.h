@@ -1,9 +1,11 @@
 #pragma once
-#include <string>
-#include <vector>
-#include <unordered_map>
+
 #include <filesystem>
 #include <fstream>
+#include <optional>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 struct PackageIndex {
     struct Info {
@@ -45,7 +47,7 @@ struct PackageIndex {
                 if (!entry) throw std::runtime_error{"unexpected entry in " + path.string()};
                 entry->second.back().dependencies.push_back(line.substr(6));
             } else {
-                if (entry) {
+                if (entry and !entry->second.empty()) {
                     packages.try_emplace(entry->first, entry->second);
                     entry.reset();
                 }
@@ -57,5 +59,22 @@ struct PackageIndex {
             packages.try_emplace(entry->first, entry->second);
             entry.reset();
         }
+    }
+};
+
+struct PackageIndices {
+    std::unordered_map<std::filesystem::path, PackageIndex> indices;
+
+    auto findLatest(std::string_view name) -> std::optional<std::tuple<std::filesystem::path, PackageIndex const*, std::string, PackageIndex::Info const*>> {
+        for (auto const& [path, index] : indices) {
+            for (auto const& [key, infos] : index.packages) {
+                if (key.starts_with(name)) {
+                    auto const& info = infos.back();
+                    auto res = std::make_tuple<std::filesystem::path, PackageIndex const*, std::string, PackageIndex::Info const*>(std::filesystem::path{path}, &index, std::string{key}, &info);
+                    return res;
+                }
+            }
+        }
+        return std::nullopt;
     }
 };
