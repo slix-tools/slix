@@ -21,19 +21,14 @@ auto cli = clice::Argument{ .arg    = "sync",
 };
 
 void app() {
-    auto path = getSlixConfigPath() / "upstreams";
-    if (!exists(path)) {
-        throw std::runtime_error{"missing path: " + path.string()};
-    }
-
-
-    auto slixPkgPaths = getSlixPkgPaths();
-    auto istPkgs      = installedPackages(slixPkgPaths);
+    auto pathUpstreams = getUpstreamsPath();
+    auto slixPkgPaths  = getSlixPkgPaths();
+    auto istPkgs       = installedPackages(slixPkgPaths);
 
     // load all indices
     auto indices = std::map<std::string, PackageIndex>{};
     auto pkgToInfo = std::map<std::string, std::tuple<std::string, std::string, PackageIndex::Info const*>>{};
-    for (auto const& e : std::filesystem::directory_iterator{path}) {
+    for (auto const& e : std::filesystem::directory_iterator{pathUpstreams}) {
         if (e.path().extension() != ".db") continue;
         auto& index = indices[e.path()];
         index.loadFile(e.path());
@@ -52,7 +47,7 @@ void app() {
         using Info = PackageIndex::Info;
         auto [key, info] = [&]() -> std::tuple<std::string, Info const*> {
             auto closeHits = std::map<std::string, std::tuple<std::string, Info const*>>{};
-            for (auto const& e : std::filesystem::directory_iterator{path}) {
+            for (auto const& e : std::filesystem::directory_iterator{pathUpstreams}) {
                 if (e.path().extension() != ".db") continue;
                 auto& index = indices[e.path()];
                 for (auto const& [key, infos] : index.packages) {

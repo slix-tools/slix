@@ -16,16 +16,12 @@ auto cli = clice::Argument{ .arg    = "search",
 };
 
 void app() {
-    auto path = getSlixConfigPath() / "upstreams";
-    if (!exists(path)) {
-        throw std::runtime_error{"missing path: " + path.string()};
-    }
-
-    auto slixPkgPaths = getSlixPkgPaths();
-    auto istPkgs      = installedPackages(slixPkgPaths);
+    auto pathUpstreams = getUpstreamsPath();
+    auto slixPkgPaths  = getSlixPkgPaths();
+    auto istPkgs       = installedPackages(slixPkgPaths);
 
     for (auto pattern : *cli) {
-        for (auto const& e : std::filesystem::directory_iterator{path}) {
+        for (auto const& e : std::filesystem::directory_iterator{pathUpstreams}) {
             auto index = PackageIndex{};
             index.loadFile(e.path());
             for (auto const& [key, infos] : index.packages) {

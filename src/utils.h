@@ -34,6 +34,18 @@ inline auto getSlixConfigPath() -> std::filesystem::path {
 }
 
 /**
+ * get path to upstream directories
+ */
+inline auto getUpstreamsPath() -> std::filesystem::path {
+    auto path = getSlixConfigPath() / "upstreams";
+    if (!exists(path)) {
+        throw std::runtime_error{"missing path: " + path.string()};
+    }
+    return path;
+}
+
+
+/**
  * returns a list of paths to search for installed packages
  */
 inline auto getSlixPkgPaths() -> std::vector<std::filesystem::path> {
