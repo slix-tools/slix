@@ -34,6 +34,12 @@ auto cliMountPoint = clice::Argument{ .parent = &cli,
                                       .value = std::string{},
 };
 
+auto cliStack = clice::Argument{ .parent = &cli,
+                                 .arg    = "--stack",
+                                 .desc   = "Will add paths to PATH instead of overwritting, allows stacking behavior",
+};
+
+
 auto searchPackagePath(std::vector<std::filesystem::path> const& slixPkgPaths, std::string const& name) -> std::filesystem::path {
     for (auto p : slixPkgPaths) {
         for (auto pkg : std::filesystem::directory_iterator{p}) {
@@ -144,7 +150,19 @@ void app() {
     }
     argv.push_back(nullptr);
 
-    auto _envp = std::vector<std::string>{"PATH=" + mountPoint + "/usr/bin",
+    auto PATH = []() -> std::string {
+        auto ptr = std::getenv("PATH");
+        if (!ptr) return "";
+        return ptr;
+    }();
+
+    if (PATH.empty()) {
+        PATH = mountPoint + "/usr/bin";
+    } else {
+        PATH = mountPoint + "/usr/bin:" + PATH;
+    }
+
+    auto _envp = std::vector<std::string>{"PATH=" + PATH,
                                           "SLIX_ROOT=" + mountPoint,
     };
     auto envp = std::vector<char const*>{};
