@@ -11,8 +11,9 @@ auto cliHelp = clice::Argument { .arg      = {"--help"},
 void slix_script_main(std::string script);
 
 int main(int argc, char** argv) {
-    // by pass verything, if called via slix-script sym link
-    if (argc == 2 and std::string{argv[0]} == "slix-script") {
+    // by pass everything, if called via slix-script sym link
+    if (argc == 2 and std::filesystem::path{argv[0]}.filename() == "slix-script") {
+        clice::argv0 = std::filesystem::path{argv[0]}.filename();
         slix_script_main(argv[1]);
     }
     try {
