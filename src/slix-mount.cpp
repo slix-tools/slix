@@ -48,24 +48,12 @@ void app() {
     auto istPkgs        = installedPackages(slixPkgPaths);
     auto packageIndices = loadPackageIndices();
 
-
     auto requiredPackages = std::unordered_set<std::string>{};
     for (auto input : *cliPackages) {
-        auto [fullName, info] = [&]() -> std::tuple<std::string, PackageIndex::Info> {
-            for (auto const& [path, index] : packageIndices.indices) {
-                for (auto const& [key, infos] : index.packages) {
-                    for (auto const& info : infos) {
-                        auto s = fmt::format("{}@{}#{}", key, info.version, info.hash);
-                        if (key == input or s == input) {
-                            if (istPkgs.contains(s + ".gar")) {
-                                return {s, info};
-                            }
-                        }
-                    }
-                }
-            }
+        auto [fullName, info] = packageIndices.findInstalled(input, istPkgs);
+        if (fullName.empty()) {
             throw std::runtime_error{"can find any installed package for " + input};
-        }();
+        }
         requiredPackages.insert(fullName);
         for (auto const& d : info.dependencies) {
             if (!istPkgs.contains(d + ".gar")) {
