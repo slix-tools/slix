@@ -12,25 +12,25 @@
 namespace {
 void app();
 auto cli = clice::Argument{ .parent = &cliIndex,
-                            .arg    = "add",
+                            .args    = "add",
                             .desc   = "add a package to the index",
                             .value  = std::filesystem::path{},
                             .cb     = app,
 };
 auto cliPackage = clice::Argument { .parent = &cli,
-                                    .arg    = "--package",
+                                    .args   = "--package",
                                     .desc   = "path to the package to add",
                                     .value  = std::filesystem::path{},
 };
 
 auto cliName = clice::Argument { .parent = &cli,
-                                 .arg    = "--name",
+                                 .args   = "--name",
                                  .desc   = "name of the package",
                                  .value  = std::string{},
 };
 
 auto cliVersion = clice::Argument { .parent = &cli,
-                                    .arg    = "--version",
+                                    .args   = "--version",
                                     .desc   = "version of package",
                                     .value  = std::string{},
 };

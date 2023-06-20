@@ -9,7 +9,7 @@
 
 namespace {
 void app();
-auto cli = clice::Argument{ .arg    = "update",
+auto cli = clice::Argument{ .args   = "update",
                             .desc   = "updates the known packages from mirrors/remotes",
                             .cb     = app,
 };

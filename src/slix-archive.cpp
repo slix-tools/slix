@@ -6,17 +6,17 @@
 namespace {
 void app();
 
-auto cli = clice::Argument{ .arg    = "archive",
+auto cli = clice::Argument{ .args   = "archive",
                             .desc   = "creates a gar file",
                             .cb     = app,
 };
 
-auto cliInput = clice::Argument{ .arg    = "--input",
+auto cliInput = clice::Argument{ .args   = "--input",
                                  .desc   = "path to the folder, that should be archived",
                                  .value  = std::string{},
 };
 
-auto cliOutput = clice::Argument{ .arg    = "--output",
+auto cliOutput = clice::Argument{ .args   = "--output",
                                   .desc   = "name of the file that is being outputed",
                                   .value  = std::string{},
 };

@@ -10,19 +10,19 @@
 namespace {
 void app();
 auto cli = clice::Argument{ .parent = &cliIndex,
-                            .arg    = "info",
+                            .args   = "info",
                             .desc   = "info about a package",
                             .value  = std::filesystem::path{},
                             .cb     = app,
 };
 auto cliName    = clice::Argument { .parent = &cli,
-                                    .arg    = "--name",
+                                    .args   = "--name",
                                     .desc   = "name of the package",
                                     .value  = std::string{},
 };
 
 auto cliDependencies    = clice::Argument { .parent = &cli,
-                                            .arg    = "--dependencies",
+                                            .args   = "--dependencies",
                                             .desc   = "list dependencies of latest",
 };
 

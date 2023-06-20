@@ -16,26 +16,26 @@
 
 namespace {
 void app();
-auto cli = clice::Argument{ .arg    = "run",
+auto cli = clice::Argument{ .args   = "run",
                             .desc   = "starts a slix environment with specified packages",
                             .value  = std::vector<std::string>{},
                             .cb     = app,
 };
 
 auto cliCommand = clice::Argument { .parent = &cli,
-                                    .arg   = {"-c"},
+                                    .args  = {"-c"},
                                     .desc  = "program to execute inside the shell",
                                     .value = std::vector<std::string>{},
 };
 
 auto cliMountPoint = clice::Argument{ .parent = &cli,
-                                      .arg  = "--mount",
+                                      .args = "--mount",
                                       .desc = "path to the mount point or if already in use, reuse",
                                       .value = std::string{},
 };
 
 auto cliStack = clice::Argument{ .parent = &cli,
-                                 .arg    = "--stack",
+                                 .args   = "--stack",
                                  .desc   = "Will add paths to PATH instead of overwritting, allows stacking behavior",
 };
 

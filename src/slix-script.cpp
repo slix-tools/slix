@@ -12,7 +12,7 @@ void slix_script_main(std::string script);
 
 namespace {
 void app();
-auto cli = clice::Argument{ .arg    = "script",
+auto cli = clice::Argument{ .args   = "script",
                             .desc   = "run in script mode",
                             .value  = std::string{},
                             .cb     = app,

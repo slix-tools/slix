@@ -9,7 +9,7 @@
 
 namespace {
 void app();
-auto cli = clice::Argument{ .arg    = "search",
+auto cli = clice::Argument{ .args   = "search",
                             .desc   = "search locally for available slix packages",
                             .value  = std::vector<std::string>{},
                             .cb     = app,

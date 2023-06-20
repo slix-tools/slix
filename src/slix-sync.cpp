@@ -14,7 +14,7 @@
 
 namespace {
 void app();
-auto cli = clice::Argument{ .arg    = "sync",
+auto cli = clice::Argument{ .args   = "sync",
                             .desc   = "synchronizes a package and its dependencies",
                             .value  = std::vector<std::string>{},
                             .cb     = app,

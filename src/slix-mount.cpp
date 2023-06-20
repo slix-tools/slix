@@ -16,23 +16,23 @@
 
 namespace {
 void app();
-auto cli = clice::Argument{ .arg    = "mount",
+auto cli = clice::Argument{ .args   = "mount",
                             .desc   = "mounts a shell environment",
                             .cb     = app,
 };
 
 auto cliPackages = clice::Argument{ .parent = &cli,
-                                    .arg   = "-p",
+                                    .args  = "-p",
                                     .desc  = "packages to initiate inside the environment",
                                     .value = std::vector<std::string>{},
 };
 auto cliMountPoint = clice::Argument{ .parent = &cli,
-                                      .arg  = "--mount",
+                                      .args = "--mount",
                                       .desc = "path to the mount point",
                                       .value = std::string{},
 };
 auto cliFork = clice::Argument{ .parent = &cli,
-                                .arg  = "--fork",
+                                .args = "--fork",
                                 .desc = "fork program to run in the background (also ignores SIGHUP)",
 };
 

@@ -7,7 +7,7 @@
 namespace {
 void app();
 auto cli = clice::Argument{ .parent = &cliIndex,
-                            .arg    = "init",
+                            .args   = "init",
                             .desc   = "initializes a new index",
                             .value  = std::filesystem::path{},
                             .cb     = app,
