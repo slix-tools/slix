@@ -5,6 +5,7 @@
 
 #include <cassert>
 #include <fmt/format.h>
+#include <map>
 
 namespace clice {
 
@@ -23,7 +24,8 @@ inline auto parse(int argc, char const* const* argv) -> std::optional<std::strin
 
     auto findRootArg = [&](std::string_view str) -> ArgumentBase* {
         for (auto arg : Register::getInstance().arguments) {
-            if (arg->arg == str and arg->init) {
+            auto iter = std::find(arg->args.begin(), arg->args.end(), str);
+            if (iter != arg->args.end() and arg->init) {
                 return arg;
             }
         }
@@ -32,7 +34,8 @@ inline auto parse(int argc, char const* const* argv) -> std::optional<std::strin
 
     auto findActiveArg = [&](std::string_view str, ArgumentBase* base) -> ArgumentBase* {
         for (auto arg : base->arguments) {
-            if (arg->arg == str and arg->init) {
+            auto iter = std::find(arg->args.begin(), arg->args.end(), str);
+            if (iter != arg->args.end() and arg->init) {
                 return arg;
             }
         }
@@ -52,11 +55,15 @@ inline auto parse(int argc, char const* const* argv) -> std::optional<std::strin
             auto options = std::vector<std::tuple<std::string, std::string>>{};
             for (auto bases : activeBases) {
                 for (auto arg : bases->arguments) {
-                    options.emplace_back(arg->arg, arg->desc);
+                    if (!arg->args.empty()) {
+                        options.emplace_back(arg->args[0], arg->desc);
+                    }
                 }
             }
             for (auto arg : Register::getInstance().arguments) {
-                    options.emplace_back(arg->arg, arg->desc);
+                if (!arg->args.empty()) {
+                    options.emplace_back(arg->args[0], arg->desc);
+                }
             }
             size_t longestWord = {};
             for (auto const& [arg, desc] : options) {
@@ -101,19 +108,27 @@ inline auto parse(int argc, char const* const* argv) -> std::optional<std::strin
         exit(0);
     }
 
-    // trigger all callbacks
+    // create list of all triggers according to priority
     auto& args = clice::Register::getInstance().arguments;
+    auto triggers = std::map<size_t, std::vector<std::function<void()>>>{};
     auto f = std::function<void(std::vector<clice::ArgumentBase*>)>{};
     f = [&](auto const& args) {
         for (auto arg : args) {
             if (arg->cb) {
-                arg->cb();
+                triggers[arg->cb_priority].emplace_back([=]() {
+                    arg->cb();
+                });
             }
             f(arg->arguments);
         }
     };
     f(args);
-
+    // call triggers in priority level order
+    for (auto const& [level, cbs] : triggers) {
+        for (auto const& cb : cbs) {
+            cb();
+        }
+    }
 
     return std::nullopt;
 }
