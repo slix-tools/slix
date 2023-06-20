@@ -9,15 +9,17 @@ auto cliHelp = clice::Argument { .args        = {"--help", "-h"},
 };
 }
 
-void slix_script_main(std::string script);
-
 int main(int argc, char** argv) {
-    // by pass everything, if called via slix-script sym link
-    if (argc == 2 and std::filesystem::path{argv[0]}.filename() == "slix-script") {
-        clice::argv0 = std::filesystem::path{argv[0]}.filename();
-        slix_script_main(argv[1]);
-    }
     try {
+        // by pass everything, if called via slix-script sym link
+        if (argc == 2 and std::filesystem::path{argv[0]}.filename() == "slix-script") {
+            auto args = std::vector<char const*>{argv[0], "script", argv[1], nullptr};
+            if (auto failed = clice::parse(args.size()-1, args.data()); failed) {
+                std::cerr << "parsing failed: " << *failed << "\n";
+                return 1;
+            }
+        }
+
         if (auto failed = clice::parse(argc, argv); failed) {
             std::cerr << "parsing failed: " << *failed << "\n";
             return 1;

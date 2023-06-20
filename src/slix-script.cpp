@@ -8,14 +8,13 @@
 #include <set>
 #include <thread>
 
-void slix_script_main(std::string script);
 
 namespace {
 void app();
-auto cli = clice::Argument{ .args   = "script",
-                            .desc   = "run in script mode",
-                            .value  = std::string{},
-                            .cb     = app,
+auto cli = clice::Argument{ .args        = "script",
+                            .desc        = "run in script mode",
+                            .value       = std::string{},
+                            .cb          = app,
 };
 
 /*
@@ -45,13 +44,9 @@ auto readLines(std::filesystem::path const& script) -> std::vector<std::string> 
 }
 
 void app() {
-    slix_script_main(*cli);
-}
-}
-
-void slix_script_main(std::string script) {
     auto packages = std::vector<std::string>{};
     auto argvStr  = std::vector<std::string>{};
+    auto script   = *cli;
 
     auto lines = readLines(script);
     // parse lines
@@ -72,13 +67,14 @@ void slix_script_main(std::string script) {
         }
     }
     auto mountPoint = create_temp_dir().string();
+    auto argv0 = std::filesystem::path{clice::argv0}.filename();
 
     if (!std::filesystem::exists(std::filesystem::path{mountPoint} / "slix-lock")) {
         if (cliVerbose) {
-            std::cout << "argv0: " << clice::argv0 << "\n";
+            std::cout << "argv0: " << argv0 << "\n";
             std::cout << "self-exe: " << std::filesystem::canonical("/proc/self/exe") << "\n";
         }
-        auto binary = std::filesystem::path{clice::argv0};
+        auto binary = std::filesystem::path{argv0};
         binary = std::filesystem::canonical("/proc/self/exe").parent_path().parent_path() / "bin" / binary.filename();
 
         auto call = binary.string();
@@ -118,4 +114,5 @@ void slix_script_main(std::string script) {
 
     execvpe(argv[0], (char**)argv.data(), (char**)envp.data());
     exit(127);
+}
 }
