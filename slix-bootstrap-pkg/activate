@@ -1,0 +1,3 @@
+dir="$(dirname $(realpath "$_"))"
+export SLIX_ROOT="${dir}/rootfs"
+export PATH="${SLIX_ROOT}/usr/bin:${PATH}"
