@@ -35,6 +35,18 @@ inline auto getSlixConfigPath() -> std::filesystem::path {
 }
 
 /**
+ * Path to the ~/.local/state/slix path
+ */
+inline auto getSlixStatePath() -> std::filesystem::path {
+    auto ptr = std::getenv("XDG_STATE_HOME");
+    if (ptr) return ptr + std::string{"/slix"};
+    ptr = std::getenv("HOME");
+    if (ptr) return ptr + std::string{"/.local/state/slix"};
+    throw std::runtime_error{"unknown HOME and XDG_STATE_HOME"};
+}
+
+
+/**
  * get path to upstream directories
  */
 inline auto getUpstreamsPath() -> std::filesystem::path {
@@ -43,16 +55,6 @@ inline auto getUpstreamsPath() -> std::filesystem::path {
         throw std::runtime_error{"missing path: " + path.string()};
     }
     return path;
-}
-
-
-/**
- * returns a list of paths to search for installed packages
- */
-inline auto getSlixPkgPaths() -> std::vector<std::filesystem::path> {
-    auto packagePath = getSlixConfigPath() / "packages";
-    auto paths = std::vector<std::filesystem::path>{packagePath};
-    return paths;
 }
 
 /** returns a list of installed packages - including the trailing .gar

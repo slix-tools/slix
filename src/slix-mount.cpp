@@ -44,7 +44,7 @@ void app() {
         std::filesystem::create_directories(*cliMountPoint);
     }
 
-    auto slixPkgPaths   = getSlixPkgPaths();
+    auto slixPkgPaths   = std::vector{getSlixStatePath() / "packages"};
     auto istPkgs        = installedPackages(slixPkgPaths);
     auto packageIndices = loadPackageIndices();
 

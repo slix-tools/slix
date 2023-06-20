@@ -30,8 +30,9 @@ void app() {
     ofs.close();
     // if reset, also remove all packages
     if (cliReset) {
-        std::filesystem::remove_all(path_upstreams / ".." / "packages");
-        std::filesystem::create_directories(path_upstreams / ".." / "packages");
+        auto slixStatePath = getSlixStatePath();
+        std::filesystem::remove_all(slixStatePath / "packages");
+        std::filesystem::create_directories(slixStatePath / "packages");
     }
 }
 

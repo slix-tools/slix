@@ -16,7 +16,7 @@ auto cli = clice::Argument{ .args   = "search",
 };
 
 void app() {
-    auto slixPkgPaths   = getSlixPkgPaths();
+    auto slixPkgPaths   = std::vector{getSlixStatePath() / "packages"};
     auto istPkgs        = installedPackages(slixPkgPaths);
     auto packageIndices = loadPackageIndices();
 

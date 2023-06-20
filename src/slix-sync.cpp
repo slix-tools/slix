@@ -21,7 +21,7 @@ auto cli = clice::Argument{ .args   = "sync",
 };
 
 void app() {
-    auto slixPkgPaths   = getSlixPkgPaths();
+    auto slixPkgPaths   = std::vector{getSlixStatePath() / "packages"};
     auto istPkgs        = installedPackages(slixPkgPaths);
     auto packageIndices = loadPackageIndices();
 
@@ -95,7 +95,7 @@ void app() {
         if (config.type == "file") {
             p += ".gar.zst";
             auto source = std::filesystem::path{config.path} / p;
-            auto dest   = getSlixConfigPath() / "packages" / p;
+            auto dest   = getSlixStatePath() / "packages" / p;
             std::filesystem::copy_file(source, dest, std::filesystem::copy_options::overwrite_existing);
             {
                 auto d2 = dest;
@@ -107,7 +107,7 @@ void app() {
         } else if (config.type == "https") {
             p += ".gar.zst";
             auto source = std::filesystem::path{config.path} / p;
-            auto dest   = getSlixConfigPath() / "packages" / p;
+            auto dest   = getSlixStatePath() / "packages" / p;
             //!TODO requires much better url encoding
             source = [](std::string input) -> std::string {
                 std::string output;
