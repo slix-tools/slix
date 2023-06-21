@@ -1,11 +1,15 @@
 #pragma once
 
+#include "UpstreamConfig.h"
+#include "error_fmt.h"
+
 #include <filesystem>
 #include <fmt/format.h>
 #include <fmt/std.h>
 #include <fstream>
 #include <optional>
 #include <string>
+#include <map>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -66,7 +70,23 @@ struct PackageIndex {
 };
 
 struct PackageIndices {
-    std::unordered_map<std::filesystem::path, PackageIndex> indices;
+    std::unordered_map<std::filesystem::path, PackageIndex>                                indices;
+    std::map<std::string, std::tuple<std::string, std::string, PackageIndex::Info const*>> pkgToInfo;
+
+    PackageIndices(std::unordered_map<std::filesystem::path, PackageIndex> _indices)
+        : indices{std::move(_indices)}
+    {
+        for (auto const& [path, index] : indices) {
+           for (auto const& [key, infos] : index.packages) {
+                for (auto const& info : infos) {
+                    auto s = fmt::format("{}@{}#{}", key, info.version, info.hash);
+                    pkgToInfo[s] = {path.string(), key, &info};
+                }
+            }
+        }
+    }
+    PackageIndices(PackageIndices const&) = delete;
+    PackageIndices(PackageIndices&&) = default;
 
     auto findLatest(std::string_view name) -> std::optional<std::tuple<std::filesystem::path, PackageIndex const*, std::string, PackageIndex::Info const*>> {
         for (auto const& [path, index] : indices) {
@@ -94,5 +114,54 @@ struct PackageIndices {
             }
         }
         return {};
+    }
+
+    /** find package
+     */
+    auto findPackageInfo(std::string_view pattern) -> std::tuple<std::string, PackageIndex::Info const*> {
+        for (auto const& [path, index] : indices) {
+           for (auto const& [key, infos] : index.packages) {
+                for (auto const& info : infos) {
+                    auto s = fmt::format("{}@{}#{}", key, info.version, info.hash);
+                    if (s == pattern) return {s, &info};
+                }
+                if (key == pattern) {
+                    auto const& info = infos.back();
+                    auto s = fmt::format("{}@{}#{}", key, info.version, info.hash);
+                    return {s, &info};
+                }
+            }
+        }
+        throw error_fmt{"Could not find any entry for {}", pattern};
+    }
+    /** find required/dependency packages
+     */
+    auto findDependencies(std::string_view pattern) -> std::unordered_set<std::string> {
+        auto res = std::unordered_set<std::string>{};
+        auto [key, info] = findPackageInfo(pattern);
+        res.insert(key);
+        for (auto const& d : info->dependencies) {
+            res.insert(d);
+        }
+        return res;
+    }
+
+    /** find fitting UpstreamConfig for a certain package
+     */
+    auto findPackageConfig(std::string package) -> UpstreamConfig {
+        // check if package is available on any remote
+        auto iter = pkgToInfo.find(package);
+        if (iter == pkgToInfo.end()) throw error_fmt{"missing upstream source for {}", package};
+
+        auto const& [path, key, info] = iter->second;
+
+        // Load Upstream Config
+        auto config_path = std::filesystem::path{path};
+        config_path.replace_extension();
+        auto config = UpstreamConfig{};
+        config.loadFile(config_path);
+
+        if (!config.valid()) throw error_fmt{"invalid config {}", config_path.string()};
+        return config;
     }
 };

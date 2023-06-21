@@ -84,16 +84,44 @@ inline auto searchPackagePath(std::vector<std::filesystem::path> const& slixPkgP
     throw std::runtime_error{"couldn't find path for " + name};
 }
 
+inline void unpackZstFile(std::filesystem::path file) {
+    // extract file
+    auto dest = file;
+    dest.replace_extension();
+    auto call = fmt::format("zstd -q -d --rm {} -o {}", file, dest);
+    std::system(call.c_str());
+}
+inline void downloadFile(std::string url, std::filesystem::path dest, bool verbose) {
+    auto call = fmt::format("curl -s {} -o {}", url, dest);
+    if (verbose) {
+        fmt::print("calling \"{}\"\n", call);
+    }
+    std::system(call.c_str());
+}
+
+//!TODO requires much better url encoding
+inline auto encodeURL(std::string input) -> std::string {
+    std::string output;
+    for (auto c : input) {
+        if (c == '#') {
+            output += "%23";
+        } else {
+            output += c;
+        }
+    }
+    return output;
+}
+
 /**
  * load all package indices
  */
 inline auto loadPackageIndices() -> PackageIndices {
     auto pathUpstreams = getUpstreamsPath();
-    auto res = PackageIndices{};
+    auto indices = std::unordered_map<std::filesystem::path, PackageIndex>{};
     for (auto const& e : std::filesystem::directory_iterator{pathUpstreams}) {
         if (e.path().extension() != ".db") continue;
-        auto& index = res.indices[e.path()];
+        auto& index = indices[e.path()];
         index.loadFile(e.path());
     }
-    return res;
+    return {indices};
 }
