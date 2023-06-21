@@ -52,7 +52,7 @@ void app() {
     for (auto input : *cliPackages) {
         auto [fullName, info] = packageIndices.findInstalled(input, istPkgs);
         if (fullName.empty()) {
-            throw std::runtime_error{"can find any installed package for " + input};
+            throw std::runtime_error{"can not find any installed package for " + input};
         }
         requiredPackages.insert(fullName);
         for (auto const& d : info.dependencies) {

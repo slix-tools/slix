@@ -89,7 +89,7 @@ void app() {
             // find name of package
             auto [fullName, info] = packageIndices.findInstalled(input, istPkgs);
             if (fullName.empty()) {
-                throw std::runtime_error{"can find any installed package for " + input};
+                throw std::runtime_error{"can not find any installed package for " + input};
             }
             // find package location
             auto path = searchPackagePath(slixPkgPaths, fullName + ".gar");
