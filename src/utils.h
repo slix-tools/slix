@@ -164,3 +164,32 @@ inline void execute(std::vector<std::string> const& _argv, std::map<std::string,
 
     execvpe(argv[0], (char**)argv.data(), (char**)envp.data());
 }
+
+
+inline void mountAndWait(std::filesystem::path argv0, std::filesystem::path mountPoint, std::vector<std::string> const& packages, bool verbose) {
+    if (!std::filesystem::exists(std::filesystem::path{mountPoint} / "slix-lock")) {
+        if (verbose) {
+            fmt::print("argv0: {}\n", argv0);
+            fmt::print("self-exe: {}\n", std::filesystem::canonical("/proc/self/exe"));
+        }
+        auto binary = std::filesystem::canonical("/proc/self/exe").parent_path().parent_path() / "bin" / argv0.filename();
+
+        auto call = binary.string();
+        if (verbose) {
+            call += " --verbose";
+        }
+        call += " mount --fork --mount " + mountPoint.string() + " -p";
+        for (auto p : packages) {
+            call += " " + p;
+        }
+        if (verbose) {
+            fmt::print("call mount: `{}`\n", call);
+        }
+        std::system(call.c_str());
+    }
+    auto ifs = std::ifstream{};
+    while (!ifs.is_open()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds{10}); //!TODO can we do this better to wait for slix-mount to finish?
+        ifs.open(mountPoint / "slix-lock");
+    }
+}

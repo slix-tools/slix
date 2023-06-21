@@ -1,3 +1,4 @@
+#include "App.h"
 #include "slix.h"
 #include "utils.h"
 
@@ -44,8 +45,12 @@ auto readLines(std::filesystem::path const& script) -> std::vector<std::string> 
 }
 
 void app() {
+    auto app = App{
+        .verbose = cliVerbose,
+    };
+
     auto packages = std::vector<std::string>{};
-    auto argvStr  = std::vector<std::string>{};
+    auto argv     = std::vector<std::string>{"/usr/bin/env"};
     auto script   = *cli;
 
     auto lines = readLines(script);
@@ -63,56 +68,28 @@ void app() {
         if (mode == 1) {
             packages.push_back(l);
         } else if (mode == 2) {
-            argvStr.push_back(l);
+            argv.push_back(l);
         }
     }
+    argv.push_back(script);
+
     auto mountPoint = create_temp_dir().string();
-    auto argv0 = std::filesystem::path{clice::argv0}.filename();
+    mountAndWait(clice::argv0, mountPoint, packages, cliVerbose);
 
-    if (!std::filesystem::exists(std::filesystem::path{mountPoint} / "slix-lock")) {
-        if (cliVerbose) {
-            std::cout << "argv0: " << argv0 << "\n";
-            std::cout << "self-exe: " << std::filesystem::canonical("/proc/self/exe") << "\n";
-        }
-        auto binary = std::filesystem::path{argv0};
-        binary = std::filesystem::canonical("/proc/self/exe").parent_path().parent_path() / "bin" / binary.filename();
-
-        auto call = binary.string();
-        if (cliVerbose) call += " --verbose";
-        call += " mount --fork --mount " + mountPoint + " -p";
-        for (auto p : packages) {
-            call += " " + p;
-        }
-        std::system(call.c_str());
-    }
-    auto ifs = std::ifstream{};
-    while (!ifs.is_open()) {
-        std::this_thread::sleep_for(std::chrono::milliseconds{10}); //!TODO can we do this better to wait for slix-mount to finish?
-        ifs.open(mountPoint + "/slix-lock");
+    auto PATH = app.getPATH();
+    if (PATH.empty()) {
+        PATH = mountPoint + "/usr/bin";
+    } else {
+        PATH = mountPoint + "/usr/bin:" + PATH;
     }
 
-    auto argv = std::vector<char const*>{"/usr/bin/env"};
-    for (auto const& s : argvStr) {
-        argv.emplace_back(s.c_str());
-    }
-    argv.push_back(script.c_str());
-    argv.push_back(nullptr);
-
-    auto _envp = std::vector<std::string>{"PATH=" + mountPoint + "/usr/bin",
-                                          "SLIX_ROOT=" + mountPoint,
+    auto envp = std::map<std::string, std::string> {
+        {"PATH", PATH},
+        {"SLIX_ROOT", mountPoint},
     };
-    auto envp = std::vector<char const*>{};
-    for (auto& e : _envp) {
-        envp.push_back(e.c_str());
-    }
-    for (auto e = environ; *e != nullptr; ++e) {
-        if (std::string_view{*e}.starts_with("PATH=")) continue;
-        if (std::string_view{*e}.starts_with("SLIX_ROOT=")) continue;
-        envp.push_back(*e);
-    }
-    envp.push_back(nullptr);
 
-    execvpe(argv[0], (char**)argv.data(), (char**)envp.data());
+    execute(argv, envp, /*.verbose=*/cliVerbose, /*.keepEnv=*/false);
     exit(127);
+
 }
 }

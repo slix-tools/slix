@@ -60,39 +60,13 @@ void app() {
         }
     }();
 
-    auto slixPkgPaths   = std::vector{getSlixStatePath() / "packages"};
-
-    if (!std::filesystem::exists(std::filesystem::path{mountPoint} / "slix-lock")) {
-        if (cliVerbose) {
-            fmt::print("argv0: {}\n", clice::argv0);
-            fmt::print("self-exe: {}\n", std::filesystem::canonical("/proc/self/exe"));
-        }
-        auto binary = std::filesystem::path{clice::argv0};
-        binary = std::filesystem::canonical("/proc/self/exe").parent_path().parent_path() / "bin" / binary.filename();
-
-        auto call = binary.string();
-        if (cliVerbose) {
-            call += " --verbose";
-        }
-        call += " mount --fork --mount " + mountPoint + " -p";
-        for (auto p : *cli) {
-            call += " " + p;
-        }
-        if (cliVerbose) {
-            std::cout << "call mount " << call << "\n";
-        }
-        std::system(call.c_str());
-    }
-    auto ifs = std::ifstream{};
-    while (!ifs.is_open()) {
-        std::this_thread::sleep_for(std::chrono::milliseconds{10}); //!TODO can we do this better to wait for slix-mount to finish?
-        ifs.open(mountPoint + "/slix-lock");
-    }
+    mountAndWait(clice::argv0, mountPoint, *cli, cliVerbose);
 
     auto cmd = *cliCommand;
 
     // scan for first entry point (if cmd didn't set any thing)
     if (cmd.empty()) {
+        auto slixPkgPaths = std::vector{getSlixStatePath() / "packages"};
         for (auto input : *cli) {
             // find name of package
             auto [fullName, info] = indices.findInstalled(input, istPkgs);
