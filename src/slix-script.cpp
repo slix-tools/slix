@@ -49,6 +49,9 @@ void app() {
         .verbose = cliVerbose,
     };
 
+    auto istPkgs        = app.installedPackages();
+    auto indices        = app.loadPackageIndices();
+
     auto packages = std::vector<std::string>{};
     auto argv     = std::vector<std::string>{"/usr/bin/env"};
     auto script   = *cli;
@@ -71,6 +74,7 @@ void app() {
             argv.push_back(l);
         }
     }
+    argv = scanDefaultCommand(packages, indices, istPkgs, argv);
     argv.push_back(script);
 
     auto mountPoint = create_temp_dir().string();

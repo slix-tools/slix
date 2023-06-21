@@ -1,5 +1,4 @@
 #include "App.h"
-#include "GarFuse.h"
 #include "MyFuse.h"
 #include "slix.h"
 #include "utils.h"
@@ -62,28 +61,7 @@ void app() {
 
     mountAndWait(clice::argv0, mountPoint, *cli, cliVerbose);
 
-    auto cmd = *cliCommand;
-
-    // scan for first entry point (if cmd didn't set any thing)
-    if (cmd.empty()) {
-        auto slixPkgPaths = std::vector{getSlixStatePath() / "packages"};
-        for (auto input : *cli) {
-            // find name of package
-            auto [fullName, info] = indices.findInstalled(input, istPkgs);
-            if (fullName.empty()) {
-                throw error_fmt{"can not find any installed package for {}", input};
-            }
-            // find package location
-            auto path = searchPackagePath(slixPkgPaths, fullName + ".gar");
-            auto fuse = GarFuse{path, false};
-            cmd = fuse.defaultCmd;
-            if (!cmd.empty()) break;
-        }
-    }
-
-    if (cmd.empty()) {
-        throw std::runtime_error{"no command given"};
-    }
+    auto cmd = scanDefaultCommand(*cli, indices, istPkgs, *cliCommand);
 
     // set argv variables
     cmd.insert(cmd.begin(), "/usr/bin/env");

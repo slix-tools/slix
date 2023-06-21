@@ -1,13 +1,14 @@
 #pragma once
+#include "GarFuse.h"
 #include "PackageIndex.h"
 
 #include <cstdlib>
 #include <filesystem>
 #include <random>
 #include <ranges>
-#include <unordered_set>
 #include <string>
 #include <string_view>
+#include <unordered_set>
 
 inline auto create_temp_dir() -> std::filesystem::path {
     auto tmp_dir = std::filesystem::temp_directory_path();
@@ -192,4 +193,26 @@ inline void mountAndWait(std::filesystem::path argv0, std::filesystem::path moun
         std::this_thread::sleep_for(std::chrono::milliseconds{10}); //!TODO can we do this better to wait for slix-mount to finish?
         ifs.open(mountPoint / "slix-lock");
     }
+}
+
+inline auto scanDefaultCommand(std::vector<std::string> packages, PackageIndices& indices, std::unordered_set<std::string> istPkgs, std::vector<std::string> cmd) -> std::vector<std::string> {
+    if (cmd.empty()) {
+        auto slixPkgPaths = std::vector{getSlixStatePath() / "packages"};
+        for (auto input : packages) {
+            // find name of package
+            auto [fullName, info] = indices.findInstalled(input, istPkgs);
+            if (fullName.empty()) {
+                throw error_fmt{"can not find any installed package for {}", input};
+            }
+            // find package location
+            auto path = searchPackagePath(slixPkgPaths, fullName + ".gar");
+            auto fuse = GarFuse{path, false};
+            cmd = fuse.defaultCmd;
+            if (!cmd.empty()) break;
+        }
+    }
+    if (cmd.empty()) {
+        throw error_fmt{"no command given"};
+    }
+    return cmd;
 }
