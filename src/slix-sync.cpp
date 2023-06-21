@@ -27,9 +27,11 @@ auto cliUpdate = clice::Argument{ .parent = &cli,
 };
 
 void app() {
-    auto app = App{
+    auto app = App {
         .verbose = cliVerbose,
     };
+    app.init();
+
     if (cliUpdate) {
         app.update();
     }

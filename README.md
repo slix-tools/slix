@@ -3,10 +3,13 @@
 User space package manager based on fuse for linux.
 
 # Typical commands
-- slix init - initializes slix on first run
+Beginner:
 - slix run - run a single program through slix
 - slix search - searching through packages
-- slix sync - install/sync a package from the internet
+- slix sync - update database and sync packages from remote
+
+Expert:
+- slix reset - initializes slix to a clean setup (remove all packages)
 - slix update - downloads list of available packages from mirrors/remotes
 - slix script - running slix environment in a bash script
 - slix archive - creates a .gar package

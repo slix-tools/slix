@@ -48,6 +48,7 @@ void app() {
     auto app = App{
         .verbose = cliVerbose,
     };
+    app.init();
 
     auto istPkgs        = app.installedPackages();
     auto indices        = app.loadPackageIndices();

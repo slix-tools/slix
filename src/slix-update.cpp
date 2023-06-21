@@ -17,6 +17,8 @@ void app() {
     auto app = App{
         .verbose = cliVerbose,
     };
+    app.init();
+
     // just update the remote package, not much to do here
     app.update();
 }

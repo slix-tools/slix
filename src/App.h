@@ -6,12 +6,45 @@
 #include "utils.h"
 
 #include <cstdlib>
+#include <fmt/color.h>
 #include <functional>
 #include <map>
 
 
 struct App {
     bool verbose;
+
+    void init(bool reset = false) {
+        auto path_upstreams = getUpstreamsPath();
+        if (exists(path_upstreams) and !reset) {
+            return;
+        }
+        if (!exists(path_upstreams) or !reset) {
+            std::filesystem::remove_all(path_upstreams);
+            std::filesystem::create_directories(path_upstreams);
+            auto ofs = std::ofstream{path_upstreams / "slix-tools.de.conf"};
+            ofs << "path=https://slix-tools.de/packages/\ntype=https\n";
+            ofs.close();
+            // if reset, also remove all packages
+            if (reset) {
+                auto slixStatePath = getSlixStatePath();
+                std::filesystem::remove_all(slixStatePath / "packages");
+                std::filesystem::create_directories(slixStatePath / "packages");
+            }
+        }
+
+        auto ppid       = getppid();
+        auto parentPath = std::filesystem::canonical(fmt::format("/proc/{}/exe", ppid));
+        auto selfPath   = std::filesystem::canonical(fmt::format("/proc/self/exe"));
+        auto slixRoot   = selfPath.parent_path().parent_path().parent_path();
+        try {
+            if (parentPath.filename() == "zsh") {
+                fmt::print("add `{}` to your .zshrc\n", fmt::format(fg(fmt::color::cyan), "source {}", canonical(slixRoot/"../activate")));
+            } else if (parentPath.filename() == "bash") {
+                fmt::print("add `{}` to your .bashrc\n", fmt::format(fg(fmt::color::cyan), "source {}", canonical(slixRoot/"../activate")));
+            }
+        } catch (...) {}
+    }
 
     /*
      * Path where all upstreams are located
