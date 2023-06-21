@@ -39,7 +39,6 @@ auto cliStack = clice::Argument{ .parent = &cli,
                                  .desc   = "Will add paths to PATH instead of overwritting, allows stacking behavior",
 };
 
-
 void app() {
     auto app = App{
         .verbose = cliVerbose,

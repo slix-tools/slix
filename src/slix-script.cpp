@@ -53,7 +53,7 @@ void app() {
     auto indices        = app.loadPackageIndices();
 
     auto packages = std::vector<std::string>{};
-    auto argv     = std::vector<std::string>{"/usr/bin/env"};
+    auto argv     = std::vector<std::string>{};
     auto script   = *cli;
 
     auto lines = readLines(script);
@@ -75,6 +75,7 @@ void app() {
         }
     }
     argv = scanDefaultCommand(packages, indices, istPkgs, argv);
+    argv.insert(argv.begin(), "/usr/bin/env");
     argv.push_back(script);
 
     auto mountPoint = create_temp_dir().string();
