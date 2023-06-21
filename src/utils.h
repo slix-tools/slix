@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <random>
 #include <ranges>
+#include <unordered_set>
 #include <string>
 #include <string_view>
 
