@@ -28,7 +28,7 @@ auto cliSearch = clice::Argument{ .parent = &cli,
 };
 
 auto cliUpdate = clice::Argument{ .parent = &cli,
-                                  .args = {"--update", "-u"},
+                                  .args = {"--update", "-y"},
                                   .desc = "Check remotes for updated index.db file",
 };
 
