@@ -15,10 +15,16 @@
 
 namespace {
 void app();
-auto cli = clice::Argument{ .args   = "sync",
+auto cli = clice::Argument{ .args   = {"sync", "-S"},
                             .desc   = "synchronizes a package and its dependencies",
                             .value  = std::vector<std::string>{},
                             .cb     = app,
+};
+
+auto cliSearch = clice::Argument{ .parent = &cli,
+                                  .args = {"-s"},
+                                  .desc = "search for packages",
+                                  .value = std::vector<std::string>{},
 };
 
 auto cliUpdate = clice::Argument{ .parent = &cli,
@@ -38,6 +44,16 @@ void app() {
 
     auto istPkgs        = app.installedPackages();
     auto indices        = app.loadPackageIndices();
+
+    if (cliSearch) {
+        for (auto pattern : *cliSearch) {
+            auto opt = indices.findLatest(pattern);
+            if (!opt) continue;
+            auto [path, index, key, info] = *opt;
+            fmt::print("{}@{}#{}\n", key, info->version, info->hash);
+        }
+        return;
+    }
 
     auto requiredPkgs    = std::unordered_set<std::string>{};
 

@@ -5,8 +5,7 @@ User space package manager based on fuse for linux.
 # Typical commands
 Beginner:
 - slix run - run a single program through slix
-- slix search - searching through packages
-- slix sync - update database and sync packages from remote
+- slix sync - update database and sync packages from remote, search for packages
 
 Expert:
 - slix reset - initializes slix to a clean setup (remove all packages)

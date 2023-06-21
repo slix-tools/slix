@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
             }
         }
 
-        if (auto failed = clice::parse(argc, argv); failed) {
+        if (auto failed = clice::parse(argc, argv, /*.combineDashes=*/true); failed) {
             std::cerr << "parsing failed: " << *failed << "\n";
             return 1;
         }
