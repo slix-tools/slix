@@ -80,7 +80,7 @@ void app() {
     argv.push_back(script);
 
     auto mountPoint = create_temp_dir().string();
-    mountAndWait(clice::argv0, mountPoint, packages, cliVerbose);
+    auto handle = mountAndWait(clice::argv0, mountPoint, packages, cliVerbose);
 
     auto PATH = app.getPATH();
     if (PATH.empty()) {

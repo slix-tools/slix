@@ -167,7 +167,7 @@ inline void execute(std::vector<std::string> const& _argv, std::map<std::string,
 }
 
 
-inline void mountAndWait(std::filesystem::path argv0, std::filesystem::path mountPoint, std::vector<std::string> const& packages, bool verbose) {
+inline auto mountAndWait(std::filesystem::path argv0, std::filesystem::path mountPoint, std::vector<std::string> const& packages, bool verbose) -> std::ifstream {
     if (!std::filesystem::exists(std::filesystem::path{mountPoint} / "slix-lock")) {
         if (verbose) {
             fmt::print("argv0: {}\n", argv0);
@@ -193,6 +193,7 @@ inline void mountAndWait(std::filesystem::path argv0, std::filesystem::path moun
         std::this_thread::sleep_for(std::chrono::milliseconds{10}); //!TODO can we do this better to wait for slix-mount to finish?
         ifs.open(mountPoint / "slix-lock");
     }
+    return ifs;
 }
 
 inline auto scanDefaultCommand(std::vector<std::string> packages, PackageIndices& indices, std::unordered_set<std::string> istPkgs, std::vector<std::string> cmd) -> std::vector<std::string> {

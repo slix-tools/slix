@@ -59,7 +59,7 @@ void app() {
         }
     }();
 
-    mountAndWait(clice::argv0, mountPoint, *cli, cliVerbose);
+    auto handle = mountAndWait(clice::argv0, mountPoint, *cli, cliVerbose);
 
     auto cmd = scanDefaultCommand(*cli, indices, istPkgs, *cliCommand);
 
