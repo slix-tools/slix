@@ -10,7 +10,6 @@ Beginner:
 
 Expert:
 - slix reset - initializes slix to a clean setup (remove all packages)
-- slix update - downloads list of available packages from mirrors/remotes
 - slix script - running slix environment in a bash script
 - slix archive - creates a .gar package
 - slix mount - mounts a slix environment without launching any programs (used by slix shell and slix script)
