@@ -10,7 +10,7 @@ if [ "${BUILD_TYPE:-debug}" == "release" ]; then
 else
     FLAGS="${FLAGS} -ggdb -O0"
 fi
-cmds="archive index-init index-add index-info mount run reset script sync"
+cmds="archive index-add index-init index-info index-squash mount run reset script sync"
 objs=""
 for cmd in ${cmds}; do
     g++ ${FLAGS} -c src/slix-${cmd}.cpp -o build/obj/slix-${cmd}.cpp.o
