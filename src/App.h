@@ -18,7 +18,7 @@ struct App {
      * !TODO this should rather return a list of paths to *.conf, since they could be found in several locations
      */
     auto getUpstreamsPath() const -> std::filesystem::path {
-        auto pathUpstreams = getUpstreamsPath();
+        auto pathUpstreams = ::getUpstreamsPath();
         if (!exists(pathUpstreams)) {
             throw error_fmt{"missing upstream path {}", pathUpstreams};
         }
@@ -51,13 +51,13 @@ struct App {
                 auto source = config.path + "/index.db";
                 auto dest   = path.string() + ".db";
                 std::filesystem::copy_file(source, dest, std::filesystem::copy_options::overwrite_existing);
-                fmt::print("pulled update from {}", config.path);
+                fmt::print("pulled update from {}\n", config.path);
             } else if (config.type == "https") {
                 auto source = config.path + "/index.db";
                 auto dest   = path.string() + ".db";
                 auto call = "curl \"" + source + "\" -o \"" + dest + "\"";
                 std::system(call.c_str());
-                fmt::print("pulled update from {}", config.path);
+                fmt::print("pulled update from {}\n", config.path);
             } else {
                 throw error_fmt{"unknown upstream type '{}'", config.type};
             }

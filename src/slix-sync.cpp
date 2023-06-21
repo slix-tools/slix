@@ -21,10 +21,18 @@ auto cli = clice::Argument{ .args   = "sync",
                             .cb     = app,
 };
 
+auto cliUpdate = clice::Argument{ .parent = &cli,
+                                  .args = {"--update", "-u"},
+                                  .desc = "Check remotes for updated index.db file",
+};
+
 void app() {
     auto app = App{
         .verbose = cliVerbose,
     };
+    if (cliUpdate) {
+        app.update();
+    }
 
     auto istPkgs        = app.installedPackages();
     auto indices        = app.loadPackageIndices();
