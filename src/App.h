@@ -5,6 +5,7 @@
 #include "error_fmt.h"
 #include "utils.h"
 
+#include <cstdlib>
 #include <functional>
 #include <map>
 
@@ -105,5 +106,11 @@ struct App {
             throw error_fmt{"unknown upstream type {}", config.type};
         }
         unpackZstFile(dest);
+    }
+
+    auto getPATH() const -> std::string {
+        auto ptr = std::getenv("PATH");
+        if (!ptr) return "";
+        return ptr;
     }
 };

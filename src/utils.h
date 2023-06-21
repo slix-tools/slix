@@ -125,3 +125,42 @@ inline auto loadPackageIndices() -> PackageIndices {
     }
     return {indices};
 }
+
+inline void execute(std::vector<std::string> const& _argv, std::map<std::string, std::string> _envp, bool verbose, bool keepEnv) {
+    // set argv variables
+    auto argv = std::vector<char const*>{};
+    for (auto const& s : _argv) {
+        argv.emplace_back(s.c_str());
+    }
+
+    auto envp = std::vector<char const*>{};
+    for (auto& [key, value] : _envp) {
+        value = key + "=" + value;
+        envp.push_back(value.c_str());
+    }
+    if (keepEnv) {
+        for (auto e = environ; *e != nullptr; ++e) {
+            [&]() {
+                for (auto const& [key, value] : _envp) {
+                    auto view = std::string_view{*e};
+                    if (view.size() > key.size()
+                        and view[key.size()] == '=' && view.starts_with(key)
+                        and view.starts_with(key)
+                    ) {
+                        return;
+                    }
+                }
+                envp.push_back(*e);
+            }();
+        }
+    }
+
+    // call exec
+    if (verbose) {
+        fmt::print("calling `{}`\n", fmt::join(argv, " "));
+    }
+    argv.push_back(nullptr);
+    envp.push_back(nullptr);
+
+    execvpe(argv[0], (char**)argv.data(), (char**)envp.data());
+}

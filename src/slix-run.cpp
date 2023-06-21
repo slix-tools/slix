@@ -1,3 +1,4 @@
+#include "App.h"
 #include "GarFuse.h"
 #include "MyFuse.h"
 #include "slix.h"
@@ -41,6 +42,13 @@ auto cliStack = clice::Argument{ .parent = &cli,
 
 
 void app() {
+    auto app = App{
+        .verbose = cliVerbose,
+    };
+
+    auto istPkgs        = app.installedPackages();
+    auto indices        = app.loadPackageIndices();
+
     auto mountPoint = [&]() -> std::string {
         if (cliMountPoint) {
             if (!std::filesystem::exists(*cliMountPoint)) {
@@ -53,21 +61,19 @@ void app() {
     }();
 
     auto slixPkgPaths   = std::vector{getSlixStatePath() / "packages"};
-    auto istPkgs        = installedPackages(slixPkgPaths);
-    auto packageIndices = loadPackageIndices();
-
-    auto cmd = *cliCommand;
 
     if (!std::filesystem::exists(std::filesystem::path{mountPoint} / "slix-lock")) {
         if (cliVerbose) {
-            std::cout << "argv0: " << clice::argv0 << "\n";
-            std::cout << "self-exe: " << std::filesystem::canonical("/proc/self/exe") << "\n";
+            fmt::print("argv0: {}\n", clice::argv0);
+            fmt::print("self-exe: {}\n", std::filesystem::canonical("/proc/self/exe"));
         }
         auto binary = std::filesystem::path{clice::argv0};
         binary = std::filesystem::canonical("/proc/self/exe").parent_path().parent_path() / "bin" / binary.filename();
 
         auto call = binary.string();
-        if (cliVerbose) call += " --verbose";
+        if (cliVerbose) {
+            call += " --verbose";
+        }
         call += " mount --fork --mount " + mountPoint + " -p";
         for (auto p : *cli) {
             call += " " + p;
@@ -83,13 +89,15 @@ void app() {
         ifs.open(mountPoint + "/slix-lock");
     }
 
+    auto cmd = *cliCommand;
+
     // scan for first entry point (if cmd didn't set any thing)
     if (cmd.empty()) {
         for (auto input : *cli) {
             // find name of package
-            auto [fullName, info] = packageIndices.findInstalled(input, istPkgs);
+            auto [fullName, info] = indices.findInstalled(input, istPkgs);
             if (fullName.empty()) {
-                throw std::runtime_error{"can not find any installed package for " + input};
+                throw error_fmt{"can not find any installed package for {}", input};
             }
             // find package location
             auto path = searchPackagePath(slixPkgPaths, fullName + ".gar");
@@ -103,49 +111,23 @@ void app() {
         throw std::runtime_error{"no command given"};
     }
 
+    // set argv variables
+    cmd.insert(cmd.begin(), "/usr/bin/env");
 
-    auto argv = std::vector<char const*>{"/usr/bin/env"};
-    for (auto const& s : cmd) {
-        argv.emplace_back(s.c_str());
-    }
-    argv.push_back(nullptr);
-
-    auto PATH = []() -> std::string {
-        auto ptr = std::getenv("PATH");
-        if (!ptr) return "";
-        return ptr;
-    }();
-
+    // Set environment variables
+    auto PATH = app.getPATH();
     if (PATH.empty() || !cliStack) {
         PATH = mountPoint + "/usr/bin";
     } else {
         PATH = mountPoint + "/usr/bin:" + PATH;
     }
 
-    auto _envp = std::vector<std::string>{"PATH=" + PATH,
-                                          "SLIX_ROOT=" + mountPoint,
+    auto envp = std::map<std::string, std::string> {
+        {"PATH", PATH},
+        {"SLIX_ROOT", mountPoint},
     };
-    auto envp = std::vector<char const*>{};
-    for (auto& e : _envp) {
-        envp.push_back(e.c_str());
-    }
-    for (auto e = environ; *e != nullptr; ++e) {
-        if (std::string_view{*e}.starts_with("PATH=")) continue;
-        if (std::string_view{*e}.starts_with("SLIX_ROOT=")) continue;
-        envp.push_back(*e);
-    }
-    envp.push_back(nullptr);
 
-    if (cliVerbose) {
-        std::cout << "calling shell";
-        for (auto a : argv) {
-            if (a == nullptr) continue;
-            std::cout << " " << a;
-        }
-        std::cout << "\n";
-    }
-
-    execvpe(argv[0], (char**)argv.data(), (char**)envp.data());
+    execute(cmd, envp, /*.verbose=*/cliVerbose, /*.keepEnv=*/true);
     exit(127);
 }
 }
