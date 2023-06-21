@@ -30,6 +30,7 @@ struct App {
                 auto slixStatePath = getSlixStatePath();
                 std::filesystem::remove_all(slixStatePath / "packages");
                 std::filesystem::create_directories(slixStatePath / "packages");
+                std::filesystem::remove_all(getSlixCachePath());
             }
         }
 

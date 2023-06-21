@@ -10,8 +10,20 @@
 #include <string_view>
 #include <unordered_set>
 
+/**
+ * Path to the ~/.cache/slix path
+ */
+inline auto getSlixCachePath() -> std::filesystem::path {
+    auto ptr = std::getenv("XDG_Cache_HOME");
+    if (ptr) return ptr + std::string{"/slix"};
+    ptr = std::getenv("HOME");
+    if (ptr) return ptr + std::string{"/.cache/slix"};
+    throw std::runtime_error{"unknown HOME and XDG_CACHE_HOME"};
+}
+
+
 inline auto create_temp_dir() -> std::filesystem::path {
-    auto tmp_dir = std::filesystem::temp_directory_path();
+    auto tmp_dir = getSlixCachePath();
     auto rdev = std::random_device{};
     auto prng = std::mt19937{rdev()};
     auto rand = std::uniform_int_distribution<uint64_t>{0};
@@ -20,7 +32,7 @@ inline auto create_temp_dir() -> std::filesystem::path {
         ss << "slix-fs-" << std::hex << rand(prng);
         auto path = tmp_dir / ss.str();
         // true if the directory was created.
-        if (std::filesystem::create_directory(path)) return path;
+        if (std::filesystem::create_directories(path)) return path;
     }
     throw std::runtime_error{"failed creating temporary directory"};
 }
