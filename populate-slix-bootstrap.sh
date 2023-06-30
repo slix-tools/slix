@@ -26,7 +26,8 @@ cp -ar slix-fs/etc slix-fs/usr rootfs
        lib/libgomp.so.1.0.0 \
        lib/libitm.so.1.0.0 \
        lib/libquadmath.so.0.0.0
-    rm -r share/man share/doc
+    rm -r lib/{pkgconfig,cmake}
+    rm -r share/{man,doc,fish,locale,zsh}
     rm -r include
 )
 cat slix-fs/slix-lock
