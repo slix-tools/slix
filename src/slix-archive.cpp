@@ -1,3 +1,4 @@
+#include "error_fmt.h"
 #include "slix.h"
 
 #include "fsx/Writer.h"
@@ -11,14 +12,16 @@ auto cli = clice::Argument{ .args   = "archive",
                             .cb     = app,
 };
 
-auto cliInput = clice::Argument{ .args   = "--input",
+auto cliInput = clice::Argument{ .parent = &cli,
+                                 .args   = "--input",
                                  .desc   = "path to the folder, that should be archived",
-                                 .value  = std::string{},
+                                 .value  = std::filesystem::path{},
 };
 
-auto cliOutput = clice::Argument{ .args   = "--output",
+auto cliOutput = clice::Argument{ .parent = &cli,
+                                  .args   = "--output",
                                   .desc   = "name of the file that is being outputed",
-                                  .value  = std::string{},
+                                  .value  = std::filesystem::path{},
 };
 
 void addFolder(std::filesystem::path const& _path, std::filesystem::path const& _rootPath, fsx::Writer& writer) {
@@ -34,17 +37,16 @@ void addFolder(std::filesystem::path const& _path, std::filesystem::path const& 
 
 
 void app() {
-    if (!cliInput) throw std::runtime_error("parameter \"--input\" is missing");
-    if (!std::filesystem::exists(*cliInput)) throw std::runtime_error("input path " + *cliInput + " doesn't exists");
-    if (!std::filesystem::exists(*cliInput + "/dependencies.txt" )) throw std::runtime_error("dependency list " + *cliInput + "/dependencies.txt doesn't exists");
-    if (!std::filesystem::exists(*cliInput + "/rootfs" )) throw std::runtime_error("rootfs " + *cliInput + "/rootfs doesn't exists");
+    if (!cliInput) throw error_fmt{"parameter \"--input\" is missing"};
+    if (!exists(*cliInput)) throw error_fmt{"input path {} doesn't exists", *cliInput};
+    if (!exists(*cliInput / "dependencies.txt" )) throw error_fmt{"dependency list {} doesn't exists", *cliInput / "dependencies.txt"};
+    if (!exists(*cliInput / "rootfs" )) throw error_fmt{"rootfs {} doesn't exists", *cliInput / "rootfs"};
     if (!cliOutput) {
-        throw std::runtime_error("parameter \"--output\" is missing");
+        throw error_fmt{"parameter \"--output\" is missing"};
     }
 
-    auto path = std::filesystem::path{*cliInput};
     auto wfs = fsx::Writer{*cliOutput};
-    addFolder(path, path, wfs);
+    addFolder(*cliInput, *cliInput, wfs);
     wfs.close();
 }
 }
