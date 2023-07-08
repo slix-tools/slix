@@ -15,7 +15,14 @@ struct App {
     bool verbose;
 
     void init(bool reset = false) {
-        auto path_upstreams = getUpstreamsPath();
+        //!TODO There is something of with the definition of ::getUpstreamsPath, maybe it shouldn't throw?
+        auto path_upstreams = [&]() {
+            try {
+                return ::getUpstreamsPath();
+            } catch (...) {
+                return getSlixConfigPath() / "upstreams";
+            }
+        }();
         if (exists(path_upstreams) and !reset) {
             return;
         }
