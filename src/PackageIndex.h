@@ -114,9 +114,18 @@ struct PackageIndices {
     auto findInstalled(std::string_view name, std::unordered_set<std::string> const& istPkgs) -> std::tuple<std::string, PackageIndex::Info> {
         for (auto const& [path, index] : indices) {
             for (auto const& [key, infos] : index.packages) {
+                // search for newest version
+                if (key == name) {
+                    auto const& info = infos.back();
+                    auto s = fmt::format("{}@{}#{}", key, info.version, info.hash);
+                    if (istPkgs.contains(s + ".gar")) {
+                         return {s, info};
+                    }
+                }
+                // search for exact version
                 for (auto const& info : infos) {
                     auto s = fmt::format("{}@{}#{}", key, info.version, info.hash);
-                    if (key == name or s == name) {
+                    if (s == name) {
                         if (istPkgs.contains(s + ".gar")) {
                             return {s, info};
                         }
