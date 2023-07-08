@@ -15,7 +15,7 @@ sleep 1
 cp -ar slix-fs/etc slix-fs/usr rootfs
 (
     cd rootfs/usr
-    rm \
+    rm -rf \
        lib/libasan.so \
        lib/libasan.so.8 \
        lib/libasan.so.8.0.0 \
@@ -48,9 +48,11 @@ cp -ar slix-fs/etc slix-fs/usr rootfs
        lib/libtsan.so \
        lib/libubsan.so.1.0.0 \
        lib/libubsan.so.1 \
-       lib/libubsan.so
+       lib/libubsan.so \
+       lib/gconv \
+       lib/*.a
     rm -r lib/{pkgconfig,cmake}
-    rm -r share/{man,doc,fish,locale,zsh,info,aclocal}
+    rm -r share/{man,doc,fish,locale,zsh,info,i18n,aclocal}
     rm -r include
 )
 cat slix-fs/slix-lock
