@@ -50,7 +50,7 @@ cp -ar slix-fs/etc slix-fs/usr rootfs
        lib/libubsan.so.1 \
        lib/libubsan.so
     rm -r lib/{pkgconfig,cmake}
-    rm -r share/{man,doc,fish,locale,zsh,info,i18n,aclocal}
+    rm -r share/{man,doc,fish,locale,zsh,info,aclocal}
     rm -r include
 )
 cat slix-fs/slix-lock
