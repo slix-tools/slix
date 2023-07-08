@@ -14,7 +14,7 @@
  * Path to the ~/.cache/slix path
  */
 inline auto getSlixCachePath() -> std::filesystem::path {
-    auto ptr = std::getenv("XDG_Cache_HOME");
+    auto ptr = std::getenv("XDG_CACHE_HOME");
     if (ptr) return ptr + std::string{"/slix"};
     ptr = std::getenv("HOME");
     if (ptr) return ptr + std::string{"/.cache/slix"};
