@@ -1,4 +1,4 @@
 name=libsasl
 archpkg=${name}
-deps="slix-ld gdbm glibc openssl"
+deps="gdbm glibc openssl"
 source pkg.sh

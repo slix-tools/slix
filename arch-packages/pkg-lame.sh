@@ -1,4 +1,4 @@
 name=lame
 archpkg=${name}
-deps="slix-ld ncurses"
+deps="glibc ncurses"
 source pkg.sh

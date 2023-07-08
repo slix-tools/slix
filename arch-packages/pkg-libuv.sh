@@ -1,4 +1,4 @@
 name=libuv
 archpkg=${name}
-deps="slix-ld glibc libnsl"
+deps="glibc libnsl"
 source pkg.sh

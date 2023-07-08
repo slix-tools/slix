@@ -1,4 +1,4 @@
 name=pam
 archpkg=${name}
-deps="slix-ld "
+deps="glibc"
 source pkg.sh

@@ -1,4 +1,4 @@
 name=gpm
 archpkg=${name}
-deps="slix-ld bash procps-ng"
+deps="glibc bash procps-ng"
 source pkg.sh

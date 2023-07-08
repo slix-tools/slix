@@ -1,4 +1,4 @@
 name=sed
 archpkg=${name}
-deps="slix-ld glibc acl"
+deps="glibc acl"
 source pkg.sh

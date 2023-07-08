@@ -1,4 +1,4 @@
 name=openexr
 archpkg=${name}
-deps="slix-ld zlib imath"
+deps="glibc zlib imath"
 source pkg.sh

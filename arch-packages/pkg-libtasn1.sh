@@ -1,4 +1,4 @@
 name=libtasn1
 archpkg=${name}
-deps="slix-ld glibc"
+deps="glibc"
 source pkg.sh

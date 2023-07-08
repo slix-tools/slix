@@ -117,12 +117,12 @@ rm ${target}/requiresSlixLD.txt
 
 hasLdD=0
 for d in $deps; do
-    if [ "$d" == "slix-ld" ]; then
+    if [ "$d" == "glibc" ]; then
         hasLdD=1
     fi
 done
 
-if [ ${hasLdD} -ne ${requiresSlixLD} ]; then
+if [ ${requiresSlixLD} -eq 1 ] && [ ${hasLdD} -eq 0 ]; then
     echo "requirement of slix-ld for ${name} unclear: ${hasLdD} and ${requiresSlixLD}"
     true
 fi

@@ -1,4 +1,4 @@
 name=fribidi
 archpkg=${name}
-deps="slix-ld glibc"
+deps="glibc"
 source pkg.sh

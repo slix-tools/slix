@@ -1,4 +1,4 @@
 name=gawk
 archpkg=${name}
-deps="slix-ld bash glibc mpfr"
+deps="bash glibc mpfr"
 source pkg.sh

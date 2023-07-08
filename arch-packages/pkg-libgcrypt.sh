@@ -1,4 +1,4 @@
 name=libgcrypt
 archpkg=${name}
-deps="slix-ld libgpg-error"
+deps="glibc libgpg-error"
 source pkg.sh

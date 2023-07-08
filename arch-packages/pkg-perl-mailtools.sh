@@ -1,4 +1,4 @@
 name=perl-mailtools
 archpkg=${name}
-deps="slix-ld perl-timedate"
+deps="glibc perl-timedate"
 source pkg.sh

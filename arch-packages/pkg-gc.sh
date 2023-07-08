@@ -1,4 +1,4 @@
 name=gc
 archpkg=${name}
-deps="slix-ld gcc-libs"
+deps="glibc gcc-libs"
 source pkg.sh

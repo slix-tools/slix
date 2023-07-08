@@ -1,4 +1,4 @@
 name=rav1e
 archpkg=${name}
-deps="slix-ld gcc-libs glibc"
+deps="gcc-libs glibc"
 source pkg.sh

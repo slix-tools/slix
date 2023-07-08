@@ -1,4 +1,4 @@
 name=libxkbcommon
 archpkg=${name}
-deps="slix-ld libxml2 xkeyboard-config"
+deps="glibc libxml2 xkeyboard-config"
 source pkg.sh

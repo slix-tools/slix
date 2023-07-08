@@ -1,4 +1,4 @@
 name=libnsl
 archpkg=${name}
-deps="slix-ld glibc libtirpc"
+deps="glibc libtirpc"
 source pkg.sh

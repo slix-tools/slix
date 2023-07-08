@@ -1,4 +1,4 @@
 name=x264
 archpkg=${name}
-deps="slix-ld l-smash"
+deps="glibc l-smash"
 source pkg.sh

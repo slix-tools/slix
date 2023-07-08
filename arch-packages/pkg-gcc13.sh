@@ -1,7 +1,7 @@
 name=gcc13
 archpkg=gcc
 defaultcmd=""
-deps="slix-ld gcc-libs binutils libmpc zstd libisl"
+deps="glibc gcc-libs binutils libmpc zstd libisl"
 
 ./preparePackage.sh "${name}" "${archpkg}" "${deps}"
 

@@ -1,4 +1,4 @@
 name=libdrm
 archpkg=${name}
-deps="slix-ld libpciaccess"
+deps="glibc libpciaccess"
 source pkg.sh

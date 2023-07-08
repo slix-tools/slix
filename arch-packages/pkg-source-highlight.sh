@@ -1,4 +1,4 @@
 name=source-highlight
 archpkg=${name}
-deps="slix-ld bash boost-libs"
+deps="glibc bash boost-libs"
 source pkg.sh

@@ -1,4 +1,4 @@
 name=lm_sensors
 archpkg=${name}
-deps="slix-ld "
+deps="glibc"
 source pkg.sh

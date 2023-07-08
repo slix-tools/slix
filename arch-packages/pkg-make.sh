@@ -1,4 +1,4 @@
 name=make
 archpkg=${name}
-deps="slix-ld glibc guile"
+deps="glibc guile"
 source pkg.sh

@@ -1,4 +1,4 @@
 name=vim-runtime
 archpkg=${name}
-deps="slix-ld"
+deps="glibc"
 source pkg.sh

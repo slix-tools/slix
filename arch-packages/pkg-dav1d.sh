@@ -1,4 +1,4 @@
 name=dav1d
 archpkg=${name}
-deps="slix-ld glibc"
+deps="glibc"
 source pkg.sh

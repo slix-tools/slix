@@ -1,4 +1,4 @@
 name=libidn2
 archpkg=${name}
-deps="slix-ld libunistring"
+deps="glibc libunistring"
 source pkg.sh

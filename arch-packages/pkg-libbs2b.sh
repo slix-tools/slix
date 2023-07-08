@@ -1,4 +1,4 @@
 name=libbs2b
 archpkg=${name}
-deps="slix-ld libsndfile gcc-libs"
+deps="glibc libsndfile gcc-libs"
 source pkg.sh

@@ -1,4 +1,4 @@
 name=xz
 archpkg=${name}
-deps="slix-ld bash"
+deps="glibc bash"
 source pkg.sh

@@ -1,4 +1,4 @@
 name=nettle
 archpkg=${name}
-deps="slix-ld gmp"
+deps="glibc gmp"
 source pkg.sh

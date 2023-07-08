@@ -1,4 +1,4 @@
 name=libpsl
 archpkg=${name}
-deps="slix-ld libidn2 libunistring"
+deps="glibc libidn2 libunistring"
 source pkg.sh

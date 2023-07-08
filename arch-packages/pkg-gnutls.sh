@@ -1,4 +1,4 @@
 name=gnutls
 archpkg=${name}
-deps="slix-ld gcc-libs libtasn1 readline zlib nettle p11-kit libidn2 zstd libunistring brotli"
+deps="glibc gcc-libs libtasn1 readline zlib nettle p11-kit libidn2 zstd libunistring brotli"
 source pkg.sh

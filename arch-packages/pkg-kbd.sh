@@ -1,4 +1,4 @@
 name=kbd
 archpkg=${name}
-deps="slix-ld glibc pam"
+deps="glibc pam"
 source pkg.sh

@@ -1,4 +1,4 @@
 name=libpng
 archpkg=${name}
-deps="slix-ld zlib bash"
+deps="glibc zlib bash"
 source pkg.sh

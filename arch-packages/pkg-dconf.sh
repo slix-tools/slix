@@ -1,4 +1,4 @@
 name=dconf
 archpkg=${name}
-deps="slix-ld glib2"
+deps="glibc glib2"
 source pkg.sh

@@ -1,4 +1,4 @@
 name=sqlite
 archpkg=${name}
-deps="slix-ld readline zlib"
+deps="glibc readline zlib"
 source pkg.sh

@@ -1,4 +1,4 @@
 name=argon2
 archpkg=${name}
-deps="slix-ld glibc"
+deps="glibc"
 source pkg.sh

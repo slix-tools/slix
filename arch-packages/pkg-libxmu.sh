@@ -1,4 +1,4 @@
 name=libxmu
 archpkg=${name}
-deps="slix-ld libxext libxt"
+deps="glibc libxext libxt"
 source pkg.sh

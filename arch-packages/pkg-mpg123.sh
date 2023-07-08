@@ -1,4 +1,4 @@
 name=mpg123
 archpkg=${name}
-deps="slix-ld alsa-lib"
+deps="glibc alsa-lib"
 source pkg.sh

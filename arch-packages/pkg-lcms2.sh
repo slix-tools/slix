@@ -1,4 +1,4 @@
 name=lcms2
 archpkg=${name}
-deps="slix-ld libtiff"
+deps="glibc libtiff"
 source pkg.sh

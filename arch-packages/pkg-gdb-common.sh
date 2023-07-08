@@ -1,4 +1,4 @@
 name=gdb-common
 archpkg=${name}
-deps="slix-ld python guile"
+deps="glibc python guile"
 source pkg.sh

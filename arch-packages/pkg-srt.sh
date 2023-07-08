@@ -1,4 +1,4 @@
 name=srt
 archpkg=${name}
-deps="slix-ld openssl"
+deps="glibc openssl"
 source pkg.sh
