@@ -4,7 +4,7 @@ set -Eeuo pipefail
 
 cd slix-bootstrap-pkg
 
-rm -r rootfs
+rm -rf rootfs
 mkdir rootfs
 if [ -e slix-fs/slix-lock ]; then
     cat slix-fs/slix-lock
@@ -52,7 +52,7 @@ cp -ar slix-fs/etc slix-fs/usr rootfs
        lib/gconv \
        lib/*.a
     rm -r lib/{pkgconfig,cmake}
-    rm -r share/{man,doc,fish,locale,zsh,info,i18n,aclocal}
+    rm -r share/{man,doc,fish,locale,zsh,info,i18n,aclocal,terminfo,readline}
     rm -r include
 )
 cat slix-fs/slix-lock
