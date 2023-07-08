@@ -89,6 +89,17 @@ struct PackageIndices {
     PackageIndices(PackageIndices&&) = default;
 
     auto findLatest(std::string_view name) -> std::optional<std::tuple<std::filesystem::path, PackageIndex const*, std::string, PackageIndex::Info const*>> {
+        // prefer exact hit, over approximate hit
+        for (auto const& [path, index] : indices) {
+            for (auto const& [key, infos] : index.packages) {
+                if (key == name) {
+                    auto const& info = infos.back();
+                    auto res = std::make_tuple<std::filesystem::path, PackageIndex const*, std::string, PackageIndex::Info const*>(std::filesystem::path{path}, &index, std::string{key}, &info);
+                    return res;
+                }
+            }
+        }
+        // search again, for approximate
         for (auto const& [path, index] : indices) {
             for (auto const& [key, infos] : index.packages) {
                 if (key.starts_with(name)) {
