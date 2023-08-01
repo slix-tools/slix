@@ -3,6 +3,7 @@
 #include "PackageIndex.h"
 
 #include <cstdlib>
+#include <curl/curl.h>
 #include <filesystem>
 #include <random>
 #include <ranges>
@@ -105,11 +106,17 @@ inline void unpackZstFile(std::filesystem::path file) {
     std::system(call.c_str());
 }
 inline void downloadFile(std::string url, std::filesystem::path dest, bool verbose) {
-    auto call = fmt::format("curl -s {} -o {}", url, dest);
+    CURL* curl = curl_easy_init();
+    if (!curl) throw std::runtime_error{"setup of libcurl failed"};
+    auto file = fopen(dest.c_str(), "w");
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
+    curl_easy_perform(curl);
+    fclose(file);
     if (verbose) {
-        fmt::print("calling \"{}\"\n", call);
+        fmt::print("downloading {} -> {}\n", url, dest);
     }
-    std::system(call.c_str());
+    curl_easy_cleanup(curl);
 }
 
 //!TODO requires much better url encoding

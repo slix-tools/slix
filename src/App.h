@@ -10,7 +10,6 @@
 #include <functional>
 #include <map>
 
-
 struct App {
     bool verbose;
 
@@ -96,8 +95,7 @@ struct App {
             } else if (config.type == "https") {
                 auto source = config.path + "/index.db";
                 auto dest   = path.string() + ".db";
-                auto call = "curl \"" + source + "\" -o \"" + dest + "\"";
-                std::system(call.c_str());
+                downloadFile(source, dest, false);
                 fmt::print("pulled update from {}\n", config.path);
             } else {
                 throw error_fmt{"unknown upstream type '{}'", config.type};
