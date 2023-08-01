@@ -1,2 +1,0 @@
-#!/usr/bin/env bash
-slix-ld-g++ --sysroot ${SLIX_ROOT} "$@"

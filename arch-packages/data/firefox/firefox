@@ -1,2 +1,0 @@
-#!/usr/bin/env bash
-exec ${SLIX_ROOT}/usr/lib/firefox/firefox "$@"
