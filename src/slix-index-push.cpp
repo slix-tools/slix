@@ -41,7 +41,7 @@ void app() {
     }
 
     std::system(fmt::format("scp {}/index.db {}/index.db.new", index_path, url).c_str());
-    std::system(fmt::format("rsync -r {} {} --exclude=index.db", index_path, url).c_str());
+    std::system(fmt::format("rsync -r {}/ {} --exclude=index.db", index_path, url).c_str());
     std::system(fmt::format("ssh {} -x 'mv {}/index.db.new {}/index.db'", lurl, lpath, lpath).c_str());
     fmt::print("done pushing");
 }
