@@ -10,7 +10,7 @@ if [ "${BUILD_TYPE:-debug}" == "release" ]; then
 else
     FLAGS="${FLAGS} -ggdb -O0"
 fi
-cmds="archive index-add index-init index-info index-push index-squash mount run reset script sync"
+cmds="archive env index-add index-init index-info index-push index-squash mount run reset script sync"
 objs=""
 for cmd in ${cmds}; do
     g++ ${FLAGS} -c src/slix-${cmd}.cpp -o build/obj/slix-${cmd}.cpp.o
@@ -23,10 +23,11 @@ g++ build/obj/slix.cpp.o \
     -lcurl -lfuse -lfmt -lcrypto -o build/bin/slix
 
 ln -fs slix build/bin/slix-script
+ln -fs slix build/bin/slix-env
 
 g++ ${FLAGS} -c src/slix-ld.cpp -o build/obj/slix-ld.cpp.o -static
 g++ build/obj/slix-ld.cpp.o -o build/bin/slix-ld -static
 
 if [ "${1:-}" == "install" ]; then
-    cp build/bin/{slix,slix-script} ${HOME}/.local/bin
+    cp build/bin/{slix,slix-script,slix-env} ${HOME}/.local/bin
 fi

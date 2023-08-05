@@ -11,9 +11,18 @@ auto cliHelp = clice::Argument { .args        = {"--help", "-h"},
 
 int main(int argc, char** argv) {
     try {
-        // by pass everything, if called via slix-script sym link
+        // by-pass everything, if called via slix-script sym link
         if (argc == 2 and std::filesystem::path{argv[0]}.filename() == "slix-script") {
             auto args = std::vector<char const*>{argv[0], "script", argv[1], nullptr};
+            if (auto failed = clice::parse(args.size()-1, args.data()); failed) {
+                std::cerr << "parsing failed: " << *failed << "\n";
+                return 1;
+            }
+        }
+
+        // by-pass everything, if called via slix-env sym link
+        if (argc == 2 and std::filesystem::path{argv[0]}.filename() == "slix-env") {
+            auto args = std::vector<char const*>{argv[0], "env", argv[1], nullptr};
             if (auto failed = clice::parse(args.size()-1, args.data()); failed) {
                 std::cerr << "parsing failed: " << *failed << "\n";
                 return 1;
