@@ -32,6 +32,12 @@ auto cliUpdate = clice::Argument{ .parent = &cli,
                                   .desc = "Check remotes for updated index.db file",
 };
 
+auto cliUpgrade = clice::Argument{ .parent = &cli,
+                                  .args = {"--upgrade", "-u"},
+                                  .desc = "upgrades the currently loaded environment description file",
+};
+
+
 void app() {
     auto app = App {
         .verbose = cliVerbose,
@@ -55,10 +61,35 @@ void app() {
         return;
     }
 
+    auto envFile = std::filesystem::path{};
+    if (cliUpgrade) {
+        envFile = weakly_canonical(getEnvironmentFile());
+        if (envFile.empty()) {
+            fmt::print("No environment to upgrade\n");
+            return;
+        }
+        fmt::print("Trying to upgrade {}\n", envFile);
+    }
+
+
     auto requiredPkgs    = std::unordered_set<std::string>{};
 
     for (auto p : *cli) {
         requiredPkgs.merge(indices.findDependencies(p));
+    }
+
+    auto envPackages = std::vector<std::string>{};
+    if (cliUpgrade) {
+        envPackages = readSlixEnvFile(envFile);
+    }
+
+    // No packages where selected, select them all
+    if (requiredPkgs.empty() and cliUpgrade) {
+        for (auto p : envPackages) {
+            auto iter = p.find('@');
+            if (iter == std::string::npos) throw error_fmt{"slix is in an invalid state, package {} does not contain any '@' symbol", p};
+            requiredPkgs.merge(indices.findDependencies(p.substr(0, iter)));
+        }
     }
 
     // install all packages
@@ -72,6 +103,39 @@ void app() {
         }
 
         app.installPackage(p, config);
+    }
+
+    // upgrade
+    if (cliUpgrade) {
+        auto newPackages = std::vector<std::string>{};
+        bool changed{};
+        // Search for newer installed packages
+        for (auto p : envPackages) {
+            auto [name, info] = indices.findInstalled(p, istPkgs);
+            if (name != p) {
+                fmt::print("upgrading {} → {}\n", p, name);
+                changed = true;
+            }
+            newPackages.emplace_back(p);
+        }
+        if (!changed) {
+            fmt::print("nothing to upgrade\n");
+        } else {
+            // Read and update original file, not symlink
+            while (is_symlink(envFile)) {
+                envFile = read_symlink(envFile);
+            }
+            auto tmpFile = std::filesystem::path{envFile.string() + ".tmp"};
+            copy_file(envFile, tmpFile);
+            auto ofs = std::ofstream(tmpFile);
+            fmt::print(ofs, "#!/usr/bin/env slix-env\n");
+            for (auto const& n : newPackages) {
+                fmt::print(ofs, "{}\n", n);
+            }
+            ofs.close();
+            rename(tmpFile, envFile);
+            fmt::print("reload environment `exec slix env`");
+        }
     }
 }
 }

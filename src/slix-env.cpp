@@ -23,30 +23,6 @@ auto cliStack = clice::Argument{ .parent = &cli,
                                  .desc   = "Will add paths to PATH instead of overwritting, allows stacking behavior",
 };
 
-/*
- * Reads a slix environment
- *  - removes first line (the shebang)
- *  - reads until first line that does not start with '#'
- *  - returns lines without starting '#' and leading white spaces
- */
-auto readLines(std::filesystem::path const& script) -> std::vector<std::string> {
-    auto results = std::vector<std::string>{};
-    auto ifs = std::ifstream{script};
-    auto line = std::string{};
-    std::getline(ifs, line); // ignore first line
-    while (std::getline(ifs, line)) {
-        while (!line.empty() && line[0] == ' ') {
-            line = line.substr(1);
-        }
-        while (!line.empty() && line.back() == ' ') {
-            line = line.substr(0, line.size()-1);
-        }
-        if (line.empty()) continue;
-        results.push_back(line);
-    }
-    return results;
-}
-
 void app() {
     auto app = App{
         .verbose = cliVerbose,
@@ -58,7 +34,16 @@ void app() {
 
     auto argv     = std::vector<std::string>{};
     auto script   = *cli;
-    auto packages = readLines(script);
+
+    // reloading environment
+    if (script.empty()) {
+        if (getEnvironmentFile().empty()) {
+            fmt::print("No script given and currently not in an environment to reload - failed\n");
+            return;
+        }
+        script = getEnvironmentFile();
+    }
+    auto packages = readSlixEnvFile(script);
 
     argv = scanDefaultCommand(packages, indices, istPkgs, argv);
     argv.insert(argv.begin(), "/usr/bin/env");

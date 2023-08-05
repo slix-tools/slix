@@ -60,6 +60,16 @@ inline auto getSlixStatePath() -> std::filesystem::path {
     throw std::runtime_error{"unknown HOME and XDG_STATE_HOME"};
 }
 
+/**
+ * Path to the last loaded environment file (or empty if non available)
+ */
+inline auto getEnvironmentFile() -> std::filesystem::path {
+    auto ptr = std::getenv("SLIX_ENVIRONMENT");
+    if (ptr) return ptr;
+    return "";
+}
+
+
 
 /**
  * get path to upstream directories
@@ -235,4 +245,26 @@ inline auto scanDefaultCommand(std::vector<std::string> packages, PackageIndices
         throw error_fmt{"no command given"};
     }
     return cmd;
+}
+
+/*
+ * Reads a slix environment
+ *  - removes first line (the shebang)
+ */
+inline auto readSlixEnvFile(std::filesystem::path const& script) -> std::vector<std::string> {
+    auto results = std::vector<std::string>{};
+    auto ifs = std::ifstream{script};
+    auto line = std::string{};
+    std::getline(ifs, line); // ignore first line
+    while (std::getline(ifs, line)) {
+        while (!line.empty() && line[0] == ' ') {
+            line = line.substr(1);
+        }
+        while (!line.empty() && line.back() == ' ') {
+            line = line.substr(0, line.size()-1);
+        }
+        if (line.empty()) continue;
+        results.push_back(line);
+    }
+    return results;
 }
