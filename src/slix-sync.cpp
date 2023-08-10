@@ -27,6 +27,11 @@ auto cliSearch = clice::Argument{ .parent = &cli,
                                   .value = std::vector<std::string>{},
 };
 
+auto cliBrief = clice::Argument{ .parent = &cli,
+                                  .args = {"-b"},
+                                  .desc = "keep output brief"
+};
+
 auto cliUpdate = clice::Argument{ .parent = &cli,
                                   .args = {"--update", "-y"},
                                   .desc = "Check remotes for updated index.db file",
@@ -57,6 +62,9 @@ void app() {
             if (!opt) continue;
             auto [path, index, key, info] = *opt;
             fmt::print("{}@{}#{}\n", key, info->version, info->hash);
+            if (!cliBrief) {
+                fmt::print("    {}\n", info->description);
+            }
         }
         return;
     }

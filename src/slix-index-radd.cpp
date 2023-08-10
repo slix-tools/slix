@@ -35,6 +35,12 @@ auto cliVersion = clice::Argument { .parent = &cli,
                                     .value  = std::string{},
 };
 
+auto cliDescription = clice::Argument { .parent = &cli,
+                                        .args   = {"--description", "--desc", "-c"},
+                                        .desc   = "description of the package",
+                                        .value  = std::string{},
+};
+
 void app() {
     auto url = *cli;
     auto iter = url.find(':');
@@ -83,8 +89,9 @@ void app() {
         }
     }
     auto& info = index.packages[*cliName].emplace_back();
-    info.hash         = fmt::format("{}", hash);
     info.version      = *cliVersion;
+    info.hash         = fmt::format("{}", hash);
+    info.description  = *cliDescription;
     info.dependencies = package.dependencies;
 
     fmt::print("adding {} as {}\n", *cliName, fileName);
