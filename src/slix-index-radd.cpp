@@ -84,7 +84,7 @@ void app() {
     auto& infos = index.packages[*cliName];
     if (!infos.empty()) {
         if (infos.back().hash == hash and infos.back().version == *cliVersion) {
-            fmt::print("latest entry matches this entry, no action required\n");
+            fmt::print("latest entry matches this entry, no action required: {}@{}#{}\n", *cliName, *cliVersion, hash);
             return;
         }
     }
