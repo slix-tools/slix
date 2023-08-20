@@ -18,15 +18,21 @@ int main(int argc, char** argv) {
                 std::cerr << "parsing failed: " << *failed << "\n";
                 return 1;
             }
+            return 0;
         }
 
         // by-pass everything, if called via slix-env sym link
-        if (argc == 2 and std::filesystem::path{argv[0]}.filename() == "slix-env") {
-            auto args = std::vector<char const*>{argv[0], "env", argv[1], nullptr};
+        if (argc >= 2 and std::filesystem::path{argv[0]}.filename() == "slix-env") {
+            auto args = std::vector<char const*>{argv[0], "env"};
+            for (auto i{1}; i < argc; ++i) {
+                args.push_back(argv[i]);
+            }
+            args.push_back(nullptr);
             if (auto failed = clice::parse(args.size()-1, args.data()); failed) {
                 std::cerr << "parsing failed: " << *failed << "\n";
                 return 1;
             }
+            return 0;
         }
 
         if (auto failed = clice::parse(argc, argv, /*.combineDashes=*/true); failed) {
@@ -36,4 +42,5 @@ int main(int argc, char** argv) {
     } catch (std::exception const& e) {
         std::cerr << "error: " << e.what() << "\n";
     }
+    return 0;
 }

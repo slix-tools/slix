@@ -195,27 +195,39 @@ inline void execute(std::vector<std::string> const& _argv, std::map<std::string,
     execvpe(argv[0], (char**)argv.data(), (char**)envp.data());
 }
 
-
-inline auto mountAndWait(std::filesystem::path argv0, std::filesystem::path mountPoint, std::vector<std::string> const& packages, bool verbose) -> std::ifstream {
+inline auto mountAndWaitCall(std::filesystem::path argv0, std::filesystem::path mountPoint, std::vector<std::string> const& packages, bool verbose) -> std::vector<std::string> {
+    auto call = std::vector<std::string>{};
     if (!std::filesystem::exists(std::filesystem::path{mountPoint} / "slix-lock")) {
         if (verbose) {
             fmt::print("argv0: {}\n", argv0);
             fmt::print("self-exe: {}\n", std::filesystem::canonical("/proc/self/exe"));
         }
         auto binary = std::filesystem::canonical("/proc/self/exe").parent_path().parent_path() / "bin" / argv0.filename();
+        call.push_back(binary.string());
 
-        auto call = binary.string();
         if (verbose) {
-            call += " --verbose";
+            call.push_back("--verbose");
         }
-        call += " mount --fork --mount " + mountPoint.string() + " -p";
+        call.push_back("mount");
+        call.push_back("--fork");
+        call.push_back("--mount");
+        call.push_back(mountPoint.string());
+        call.push_back("-p");
         for (auto p : packages) {
-            call += " " + p;
+            call.push_back(p);
         }
+    }
+    return call;
+}
+
+inline auto mountAndWait(std::filesystem::path argv0, std::filesystem::path mountPoint, std::vector<std::string> const& packages, bool verbose) -> std::ifstream {
+    auto call = mountAndWaitCall(argv0, mountPoint, packages, verbose);
+    if (!call.empty()) {
+        auto callStr = fmt::format("{}", fmt::join(call, " "));
         if (verbose) {
-            fmt::print("call mount: `{}`\n", call);
+            fmt::print("call mount: `{}`\n", callStr);
         }
-        std::system(call.c_str());
+        std::system(callStr.c_str());
     }
     auto ifs = std::ifstream{};
     while (!ifs.is_open()) {
