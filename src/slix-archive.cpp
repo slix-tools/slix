@@ -39,7 +39,10 @@ void addFolder(std::filesystem::path const& _path, std::filesystem::path const& 
 void app() {
     if (!cliInput) throw error_fmt{"parameter \"--input\" is missing"};
     if (!exists(*cliInput)) throw error_fmt{"input path {} doesn't exists", *cliInput};
-    if (!exists(*cliInput / "dependencies.txt" )) throw error_fmt{"dependency list {} doesn't exists", *cliInput / "dependencies.txt"};
+    if (!exists(*cliInput / "meta/name.txt" )) throw error_fmt{"file with name {} doesn't exists", *cliInput / "meta/name.txt"};
+    if (!exists(*cliInput / "meta/version.txt" )) throw error_fmt{"file with version {} doesn't exists", *cliInput / "meta/version.txt"};
+    if (!exists(*cliInput / "meta/dependencies.txt" )) throw error_fmt{"dependency list {} doesn't exists", *cliInput / "meta/dependencies.txt"};
+
     if (!exists(*cliInput / "rootfs" )) throw error_fmt{"rootfs {} doesn't exists", *cliInput / "rootfs"};
     if (!cliOutput) {
         throw error_fmt{"parameter \"--output\" is missing"};

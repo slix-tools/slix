@@ -6,18 +6,28 @@
 #include "fsx/Reader.h"
 
 #include <filesystem>
+#include <fmt/format.h>
+#include <fmt/std.h>
 #include <fuse.h>
 #include <fuse/fuse_lowlevel.h>
-#include <iostream>
 #include <ranges>
 #include <unordered_map>
 #include <unordered_set>
 
+/**
+ * Represents a single .gar file
+ *
+ * A gar file is a uncompressed file archive with a specific data structure.
+ * This allows it to be easily mounted via fuse.
+ */
 struct GarFuse {
     std::unordered_map<std::string, fsx::Reader::Entry> entries;
 
     fsx::Reader reader;
 
+    std::string              name;
+    std::string              version;
+    std::string              description;
     std::vector<std::string> dependencies;
     std::vector<std::string> defaultCmd;
 
@@ -28,18 +38,23 @@ struct GarFuse {
         , verbose{_verbose}
     {
         if (verbose) {
-            std::cout << "opening: " << pathToPackage << "\n";
+            fmt::print("opening: {}\n", pathToPackage);
         }
 
-        std::string rootfs = "rootfs";
+        auto rootfs = std::string{"rootfs"};
         for (auto entry = reader.readNext(); entry; entry = reader.readNext()) {
-            if (entry->name == "dependencies.txt") {
-                // special list with dependencies
+            auto readEntry = [&]() {
+                // extracting the default command
                 auto const& [h, name, offset] = *entry;
                 auto buffer = std::string{};
                 buffer.resize(h.size);
                 auto ct = reader.readContent(buffer.data(), buffer.size(), offset);
                 buffer.resize(ct);
+                return buffer;
+            };
+            if (entry->name == "meta/dependencies.txt") {
+                // special list with dependencies
+                auto buffer = readEntry();
                 for (auto part : std::views::split(buffer, '\n')) {
                     auto v = std::string_view{&*part.begin(), part.size()};
                     auto s = std::string(v);
@@ -47,13 +62,9 @@ struct GarFuse {
                     dependencies.push_back(s);
                 }
                 continue;
-            } else if (entry->name == "defaultcmd.txt") {
-                // special list with dependencies
-                auto const& [h, name, offset] = *entry;
-                auto buffer = std::string{};
-                buffer.resize(h.size);
-                auto ct = reader.readContent(buffer.data(), buffer.size(), offset);
-                buffer.resize(ct);
+            } else if (entry->name == "meta/defaultcmd.txt") {
+                // extracting the default command
+                auto buffer = readEntry();
                 for (auto part : std::views::split(buffer, ' ')) {
                     auto v = std::string_view{&*part.begin(), part.size()};
                     auto s = std::string{};
@@ -65,7 +76,28 @@ struct GarFuse {
                     defaultCmd.push_back(s);
                 }
                 continue;
+            } else if (entry->name == "meta/name.txt") {
+                // extract name
+                name = readEntry();
+                name.pop_back(); // remove last line break
+                continue;
+            } else if (entry->name == "meta/version.txt") {
+                // extract version
+                version = readEntry();
+                version.pop_back(); // remove last line break
+                continue;
+            } else if (entry->name == "meta/description.txt") {
+                // extract description
+                description = readEntry();
+                description.pop_back(); // remove last line break
+                continue;
+            } else if (entry->name == "meta") {
+                continue;
+            } else if (entry->name.starts_with("meta/")) {
+                fmt::print("unknown meta information file {}\n", entry->name);
+                continue;
             }
+
             auto name = entry->name.substr(rootfs.size());
             if (name.empty()) name = "/";
             entries.try_emplace(std::move(name), std::move(*entry));
