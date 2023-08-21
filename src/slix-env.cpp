@@ -13,6 +13,7 @@
 namespace {
 void app();
 auto cli = clice::Argument{ .args        = "env",
+                            .symlink     = true,
                             .desc        = "starts a special environment",
                             .value       = std::string{},
                             .cb          = app,

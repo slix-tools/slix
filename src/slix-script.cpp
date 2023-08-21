@@ -13,6 +13,7 @@
 namespace {
 void app();
 auto cli = clice::Argument{ .args        = "script",
+                            .symlink     = true,
                             .desc        = "run in script mode",
                             .value       = std::string{},
                             .cb          = app,
