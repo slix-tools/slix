@@ -81,7 +81,7 @@ void app() {
     for (auto a : call) {
         fmt::print("{} ", quoteStringIfRequired(a));
     } fmt::print("\n");
-    fmt::print("while [ ! -e {} ]; do; sleep 0.1; done\n", quoteStringIfRequired(mountPoint));
+    fmt::print("while [ ! -e {} ]; do sleep 0.1; done\n", quoteStringIfRequired(mountPoint));
     fmt::print("exec 3<> {}/slix-lock\n", quoteStringIfRequired(mountPoint));
 
 
