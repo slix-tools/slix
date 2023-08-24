@@ -60,8 +60,8 @@ struct Writer {
         }();
 //        std::cout << "adding file " << path << " as " << newName << " type: " << (int)type << " size: " << size << "\n";
         auto state = EntryHeader {
-            .uid       = stat_.st_uid,
-            .gid       = stat_.st_gid,
+            .uid       = 0,
+            .gid       = 0,
             .type      = type,
             .perms     = perms,
             .size      = size,
