@@ -4,6 +4,8 @@
 #include "fsx/Writer.h"
 #include "fsx/Reader.h"
 
+#include <set>
+
 namespace {
 void app();
 
@@ -25,13 +27,22 @@ auto cliOutput = clice::Argument{ .parent = &cli,
 };
 
 void addFolder(std::filesystem::path const& _path, std::filesystem::path const& _rootPath, fsx::Writer& writer) {
+    auto files = std::map<std::string, std::string>{};
+    auto folders = std::set<std::string>{};
     for (auto const& dir_entry : std::filesystem::directory_iterator{_path, std::filesystem::directory_options::skip_permission_denied}) {
         auto name = dir_entry.path().filename().string();
         if (name == "." || name == "..") continue;
-        writer.addPathAs(_path / name, (_path / name).lexically_proximate(_rootPath));
+        files[(_path / name).string()] = (_path / name).lexically_proximate(_rootPath).string();
         if (dir_entry.is_directory() && !dir_entry.is_symlink()) {
-            addFolder(_path / name, _rootPath, writer);
+            folders.insert((_path / name).string());
         }
+    }
+
+    for (auto const& [key, value] : files) {
+        writer.addPathAs(key, value);
+    }
+    for (auto const& v : folders) {
+        addFolder(v, _rootPath, writer);
     }
 }
 
