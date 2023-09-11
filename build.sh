@@ -6,6 +6,7 @@ mkdir -p build/{obj,bin}
 FLAGS="-std=c++20 -D_FILE_OFFSET_BITS=64 -isystem libs/clice/src"
 
 if [ "${BUILD_TYPE:-debug}" == "release" ]; then
+    echo "using release settings"
     FLAGS="${FLAGS} -O2 -DNDEBUG -s"
 else
     FLAGS="${FLAGS} -ggdb -O0"
