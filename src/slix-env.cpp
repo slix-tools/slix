@@ -72,7 +72,7 @@ void app() {
 
     auto mountPoint = create_temp_dir().string();
     auto call = mountAndWaitCall(clice::argv0, mountPoint, packages, false);
-    while (std::filesystem::is_symlink(call[0])) {
+    while (std::filesystem::is_symlink(call[0]) and std::filesystem::path{call[0]}.filename() != "slix") {
         auto ncall = std::filesystem::read_symlink(call[0]);
         if (std::filesystem::path{ncall}.is_relative()) {
             call[0] = std::filesystem::canonical(std::filesystem::path{call[0]}.parent_path() / ncall);
