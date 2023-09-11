@@ -22,26 +22,30 @@ auto cli = clice::Argument{ .args   = {"sync", "-S"},
 };
 
 auto cliSearch = clice::Argument{ .parent = &cli,
-                                  .args = {"-s"},
-                                  .desc = "search for packages",
-                                  .value = std::vector<std::string>{},
+                                  .args   = {"-s"},
+                                  .desc   = "search for packages",
+                                  .value  = std::vector<std::string>{},
 };
 
 auto cliBrief = clice::Argument{ .parent = &cli,
-                                  .args = {"-b"},
-                                  .desc = "keep output brief"
+                                 .args   = {"-b"},
+                                 .desc   = "keep output brief"
 };
 
 auto cliUpdate = clice::Argument{ .parent = &cli,
-                                  .args = {"--update", "-y"},
-                                  .desc = "Check remotes for updated index.db file",
+                                  .args   = {"--update", "-y"},
+                                  .desc   = "Check remotes for updated index.db file",
 };
 
 auto cliUpgrade = clice::Argument{ .parent = &cli,
-                                  .args = {"--upgrade", "-u"},
-                                  .desc = "upgrades the currently loaded environment description file",
+                                   .args   = {"--upgrade", "-u"},
+                                   .desc   = "upgrades the currently loaded environment description file",
 };
-
+auto cliInputFile = clice::Argument{ .parent = &cli,
+                                     .args   = {"-f", "--file"},
+                                     .desc   = {"Path to an input file to install from"},
+                                     .value  = std::filesystem::path{},
+};
 
 void app() {
     auto app = App {
@@ -84,6 +88,11 @@ void app() {
 
     for (auto p : *cli) {
         requiredPkgs.merge(indices.findDependencies(p));
+    }
+    if (cliInputFile) {
+        for (auto p : readSlixEnvFile(*cliInputFile)) {
+            requiredPkgs.merge(indices.findDependencies(p));
+        }
     }
 
     auto envPackages = std::vector<std::string>{};
