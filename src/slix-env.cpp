@@ -106,12 +106,11 @@ void app() {
 
     auto PATH = app.getPATH();
     if (PATH.empty() || !cliStack) {
-        PATH = "${SLIX_ROOT}/usr/bin";
+        PATH = mountPoint + "/usr/bin";
     } else {
-        PATH = "${SLIX_ROOT}/usr/bin:" + PATH;
+        PATH = mountPoint + "/usr/bin:" + PATH;
     }
 
-    fmt::print("export SLIX_ROOT={}\n", quoteStringIfRequired(mountPoint));
     fmt::print("export PATH={}\n", quoteStringIfRequired(PATH));
     fmt::print("export SLIX_ENVIRONMENT={}\n", quoteStringIfRequired(std::filesystem::weakly_canonical(script).string()));
 }

@@ -13,13 +13,6 @@ int main(int argc, char** argv) {
         std::cout << "redirecting: " << p << "\n";
         std::cout << std::filesystem::canonical("/proc/self/exe") << "\n";
     }
-    auto slixRoot = [&]() -> std::string {
-        if (auto ptr = std::getenv("SLIX_ROOT"); ptr) {
-            return ptr;
-        }
-        std::cout << "SLIX_ROOT not set, abort\n";
-        exit(127);
-    }();
     if (!is_symlink(p)) {
         std::cout << "not a symlink, you don't want to execute this directly\n";
         exit(127);
@@ -41,6 +34,12 @@ int main(int argc, char** argv) {
         if (verbose) {
             std::cout << "target: " << target << "\n";
         }
+    }
+
+    auto slixRoot = target.parent_path().parent_path().parent_path().string();
+
+    if (verbose) {
+        std::cout << "slix root: " << slixRoot << "\n";
     }
 
     auto argv0 = p.filename().string();

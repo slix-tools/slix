@@ -81,7 +81,6 @@ void app() {
 
     auto envp = std::map<std::string, std::string> {
         {"PATH", PATH},
-        {"SLIX_ROOT", mountPoint},
     };
 
     execute(cmd, envp, /*.verbose=*/cliVerbose, /*.keepEnv=*/true);
