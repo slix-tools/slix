@@ -47,6 +47,13 @@ auto cliInputFile = clice::Argument{ .parent = &cli,
                                      .value  = std::filesystem::path{},
 };
 
+auto cliDependencies = clice::Argument{ .parent = &cli,
+                                        .args   = {"-d", "--dependencies"},
+                                        .desc   = {"print not only the searched packages, but also all its dependencies"},
+                                        .value  = std::filesystem::path{},
+};
+
+
 void app() {
     auto app = App {
         .verbose = cliVerbose,
@@ -68,6 +75,12 @@ void app() {
             fmt::print("{}@{}#{}\n", key, info->version, info->hash);
             if (!cliBrief) {
                 fmt::print("    {}\n", info->description);
+            } else {
+                if (cliDependencies) {
+                    for (auto d : info->dependencies) {
+                        fmt::print("{}\n", d);
+                    }
+                }
             }
         }
         return;
