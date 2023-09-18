@@ -24,6 +24,12 @@ auto cliStack = clice::Argument{ .parent = &cli,
                                  .desc   = "Will add paths to PATH instead of overwritting, allows stacking behavior",
 };
 
+auto cliMountPoint = clice::Argument{ .parent = &cli,
+                                      .args = "--mount",
+                                      .desc = "path to the mount point",
+                                      .value = std::string{},
+};
+
 auto escapeString(std::string const& s) {
     auto str = std::string{};
     for (auto c : s) {
@@ -70,7 +76,16 @@ void app() {
     }
     auto packages = readSlixEnvFile(script);
 
-    auto mountPoint = create_temp_dir().string();
+    auto mountPoint = [&]() -> std::string {
+        if (cliMountPoint) {
+            if (!std::filesystem::exists(*cliMountPoint)) {
+                std::filesystem::create_directory(*cliMountPoint);
+            }
+            return *cliMountPoint;
+        } else {
+            return create_temp_dir().string();
+        }
+    }();
     auto call = mountAndWaitCall(clice::argv0, mountPoint, packages, false);
     while (std::filesystem::is_symlink(call[0]) and std::filesystem::path{call[0]}.filename() != "slix") {
         auto ncall = std::filesystem::read_symlink(call[0]);
@@ -87,13 +102,13 @@ void app() {
 
     auto PATH = app.getPATH();
     if (PATH.empty() || !cliStack) {
-        PATH = mountPoint + "/usr/bin";
+        PATH = "${SLIX_ROOT}/usr/bin";
     } else {
-        PATH = mountPoint + "/usr/bin:" + PATH;
+        PATH = "${SLIX_ROOT}/usr/bin:" + PATH;
     }
 
-    fmt::print("export PATH={}\n", quoteStringIfRequired(PATH));
     fmt::print("export SLIX_ROOT={}\n", quoteStringIfRequired(mountPoint));
+    fmt::print("export PATH={}\n", quoteStringIfRequired(PATH));
     fmt::print("export SLIX_ENVIRONMENT={}\n", quoteStringIfRequired(std::filesystem::weakly_canonical(script).string()));
 }
 }
