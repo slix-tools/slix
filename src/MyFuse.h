@@ -19,7 +19,7 @@ struct MyFuse {
     size_t connectedClients{};
     bool verbose;
 
-    MyFuse(std::vector<GarFuse> nodes_, bool _verbose, std::filesystem::path _mountPoint)
+    MyFuse(std::vector<GarFuse> nodes_, bool _verbose, std::filesystem::path _mountPoint, bool _allowOtherUsers)
         : mountPoint{_mountPoint}
         , nodes{std::move(nodes_)}
         , verbose{_verbose} {
@@ -31,6 +31,9 @@ struct MyFuse {
 
             for (auto a : {"", "-oauto_unmount"}) {
                 fuse_opt_add_arg(&args, a);
+            }
+            if (_allowOtherUsers) {
+                fuse_opt_add_arg(&args, "-oallow_other");
             }
             channel = fuse_mount(mountPoint.c_str(), &args);
             fuse_opt_free_args(&args);

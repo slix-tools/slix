@@ -36,6 +36,12 @@ auto cliFork = clice::Argument{ .parent = &cli,
                                 .desc = "fork program to run in the background (also ignores SIGHUP)",
 };
 
+auto cliAllowOther = clice::Argument{ .parent = &cli,
+                                .args = "--allow_other",
+                                .desc = "Allows other users to access to the mounted paths",
+};
+
+
 void app() {
     if (!cliMountPoint) {
         throw std::runtime_error{"no mount point given"};
@@ -84,7 +90,7 @@ void app() {
     std::signal(SIGUSR1, [](int signal) { if (onExit) { onExit(signal); } });
 
 
-    auto fuseFS = MyFuse{std::move(layers), cliVerbose, *cliMountPoint};
+    auto fuseFS = MyFuse{std::move(layers), cliVerbose, *cliMountPoint, cliAllowOther};
     std::jthread thread;
     onExit = [&](int) {
         thread = std::jthread{[&]() {

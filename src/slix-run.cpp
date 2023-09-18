@@ -39,6 +39,11 @@ auto cliStack = clice::Argument{ .parent = &cli,
                                  .desc   = "Will add paths to PATH instead of overwritting, allows stacking behavior",
 };
 
+auto cliAllowOther = clice::Argument{ .parent = &cli,
+                                .args = "--allow_other",
+                                .desc = "Allows other users to access to the mounted paths",
+};
+
 void app() {
     auto app = App{
         .verbose = cliVerbose,
@@ -59,7 +64,7 @@ void app() {
         }
     }();
 
-    auto handle = mountAndWait(clice::argv0, mountPoint, *cli, cliVerbose);
+    auto handle = mountAndWait(clice::argv0, mountPoint, *cli, cliVerbose, cliAllowOther);
 
     auto cmd = scanDefaultCommand(*cli, indices, istPkgs, *cliCommand);
 
