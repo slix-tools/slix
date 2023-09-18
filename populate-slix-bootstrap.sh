@@ -5,14 +5,7 @@ set -Eeuo pipefail
 cd slix-bootstrap-pkg
 
 rm -rf rootfs
-mkdir rootfs
-if [ -e slix-fs/slix-lock ]; then
-    cat slix-fs/slix-lock
-    sleep 1
-fi
-slix mount --mount slix-fs -p slix &
-sleep 1
-cp -ar slix-fs/etc slix-fs/usr rootfs
+slix mount --mount rootfs -p slix --unpack
 (
     cd rootfs/usr
     rm -rf \
@@ -55,4 +48,3 @@ cp -ar slix-fs/etc slix-fs/usr rootfs
     rm -r share/{man,doc,fish,locale,zsh,info,i18n,aclocal,terminfo,readline}
     rm -r include
 )
-cat slix-fs/slix-lock
