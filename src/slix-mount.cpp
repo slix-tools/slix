@@ -41,6 +41,10 @@ auto cliAllowOther = clice::Argument{ .parent = &cli,
                                 .desc = "Allows other users to access to the mounted paths",
 };
 
+auto cliUnpack = clice::Argument{ .parent = &cli,
+                                  .args = "--unpack",
+                                  .desc = "instead of mounting, this will unpack/copy the files to the mount point"
+};
 
 void app() {
     if (!cliMountPoint) {
@@ -79,25 +83,43 @@ void app() {
         layers.emplace_back(path, cliVerbose);
     }
 
-    static auto onExit = std::function<void(int)>{};
-    if (cliFork) {
-        if (fork() != 0) return;
-        std::signal(SIGHUP, [](int) {}); // ignore hangup signal
-        std::signal(SIGINT, [](int) {});
-    } else {
-        std::signal(SIGINT, [](int signal) { if (onExit) { onExit(signal); } });
-    }
-    std::signal(SIGUSR1, [](int signal) { if (onExit) { onExit(signal); } });
 
 
-    auto fuseFS = MyFuse{std::move(layers), cliVerbose, *cliMountPoint, cliAllowOther};
-    std::jthread thread;
-    onExit = [&](int) {
-        thread = std::jthread{[&]() {
-            std::this_thread::sleep_for(std::chrono::milliseconds{100});
-            fuseFS.close();
+    if (cliUnpack) {
+        auto tempMount = *cliMountPoint + "/slix-temporary-mount-fs";
+        std::filesystem::create_directories(tempMount);
+        auto fuseFS = MyFuse{std::move(layers), cliVerbose, tempMount, cliAllowOther};
+        auto thread = std::jthread{[&]() {
+            fuseFS.loop();
         }};
-    };
-    fuseFS.loop();
+        for (auto const& dir_entry : std::filesystem::directory_iterator{tempMount}) {
+            if (dir_entry.path() == tempMount + "/slix-lock") continue;
+            std::system(fmt::format("cp -ar \"{}\" \"{}\"", dir_entry.path(), *cliMountPoint).c_str());
+        }
+//        std::this_thread::sleep_for(std::chrono::milliseconds{1000000});
+        fuseFS.close();
+        std::filesystem::remove(tempMount);
+    } else {
+        static auto onExit = std::function<void(int)>{};
+        if (cliFork) {
+            if (fork() != 0) return;
+            std::signal(SIGHUP, [](int) {}); // ignore hangup signal
+            std::signal(SIGINT, [](int) {});
+        } else {
+            std::signal(SIGINT, [](int signal) { if (onExit) { onExit(signal); } });
+        }
+        std::signal(SIGUSR1, [](int signal) { if (onExit) { onExit(signal); } });
+
+
+        auto fuseFS = MyFuse{std::move(layers), cliVerbose, *cliMountPoint, cliAllowOther};
+        std::jthread thread;
+        onExit = [&](int) {
+            thread = std::jthread{[&]() {
+                std::this_thread::sleep_for(std::chrono::milliseconds{100});
+                fuseFS.close();
+            }};
+        };
+        fuseFS.loop();
+    }
 }
 }
