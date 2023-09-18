@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-version=0.0.1
+version=0.0.2
 
 ./build.sh
 mkdir -p slix-ld-package/rootfs/usr/{bin,lib}
