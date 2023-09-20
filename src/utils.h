@@ -121,6 +121,7 @@ inline void downloadFile(std::string url, std::filesystem::path dest, bool verbo
     auto file = fopen(dest.c_str(), "w");
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
+    curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
     curl_easy_perform(curl);
     fclose(file);
     if (verbose) {
