@@ -2,6 +2,7 @@
 #include "slix.h"
 #include "utils.h"
 #include "PackageIndex.h"
+#include "PackageSupervisor.h"
 #include "UpstreamConfig.h"
 
 #include <clice/clice.h>
@@ -96,15 +97,23 @@ void app() {
         fmt::print("Trying to upgrade {}\n", envFile);
     }
 
+    auto supervisor = PackageSupervisor{};
+    if (exists(getSlixConfigPath() / "config.yaml")) {
+        supervisor.loadFile(getSlixConfigPath() / "config.yaml");
+    }
+
 
     auto requiredPkgs    = std::unordered_set<std::string>{};
 
     for (auto p : *cli) {
+        auto [key, info] = indices.findPackageInfo(p);
+        supervisor.packages[key].explicitMarked = true;
         requiredPkgs.merge(indices.findDependencies(p));
     }
     if (cliInputFile) {
         for (auto p : readSlixEnvFile(*cliInputFile)) {
             requiredPkgs.merge(indices.findDependencies(p));
+            supervisor.packages[p].environments.insert(absolute(*cliInputFile));
         }
     }
 
@@ -167,5 +176,7 @@ void app() {
             fmt::print("reload environment `exec slix env`");
         }
     }
+    supervisor.storeFile(getSlixConfigPath() / "config.yaml");
+
 }
 }
