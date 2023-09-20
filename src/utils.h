@@ -115,15 +115,30 @@ inline void unpackZstFile(std::filesystem::path file) {
     auto call = fmt::format("zstd -q -d --rm {} -o {}", file, dest);
     std::system(call.c_str());
 }
+
+//!TODO curl is not cleanup properly on failure (how does anyone does this without RAII?)
 inline void downloadFile(std::string url, std::filesystem::path dest, bool verbose) {
     CURL* curl = curl_easy_init();
     if (!curl) throw std::runtime_error{"setup of libcurl failed"};
     auto file = fopen(dest.c_str(), "w");
-    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
-    curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
-    curl_easy_perform(curl);
-    fclose(file);
+    if (file == nullptr) {
+        throw std::runtime_error{"file couldn't be opened"};
+    }
+    if (curl_easy_setopt(curl, CURLOPT_URL, url.c_str()) != CURLE_OK) {
+        throw std::runtime_error{"setting option CURLOPT_URL failed"};
+    }
+    if (curl_easy_setopt(curl, CURLOPT_WRITEDATA, file) != CURLE_OK) {
+        throw std::runtime_error{"setting option CURLOPT_WRITEDATA failed"};
+    }
+    if (curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0) != CURLE_OK) {
+        throw std::runtime_error{"setting option CURLOPT_NOPROGRESS failed"};
+    }
+    if (curl_easy_perform(curl) != CURLE_OK) {
+        throw std::runtime_error{"download could not be finished"};
+    }
+    if (fclose(file) != 0) {
+        throw std::runtime_error{"file couldn't be closed"};
+    }
     if (verbose) {
         fmt::print("downloading {} -> {}\n", url, dest);
     }
