@@ -172,6 +172,33 @@ struct PackageIndices {
         }
         return std::nullopt;
     }
+    auto findMultiLatest(std::string_view name) -> std::vector<std::tuple<std::filesystem::path, PackageIndex const*, std::string, PackageIndex::Info const*>> {
+        auto resList = std::vector<std::tuple<std::filesystem::path, PackageIndex const*, std::string, PackageIndex::Info const*>>{};
+        // prefer exact hit, over approximate hit
+        for (auto const& [path, index] : indices) {
+            for (auto const& [key, infos] : index.packages) {
+                if (key == name) {
+                    auto const& info = infos.back();
+                    auto res = std::make_tuple<std::filesystem::path, PackageIndex const*, std::string, PackageIndex::Info const*>(std::filesystem::path{path}, &index, std::string{key}, &info);
+                    resList.push_back(res);
+                }
+            }
+        }
+        if (!resList.empty()) return resList;
+
+        // search again, for approximate
+        for (auto const& [path, index] : indices) {
+            for (auto const& [key, infos] : index.packages) {
+                if (key.starts_with(name) and key != name) {
+                    auto const& info = infos.back();
+                    auto res = std::make_tuple<std::filesystem::path, PackageIndex const*, std::string, PackageIndex::Info const*>(std::filesystem::path{path}, &index, std::string{key}, &info);
+                    resList.push_back(res);
+                }
+            }
+        }
+        return resList;
+    }
+
     auto findInstalled(std::string_view name, std::unordered_set<std::string> const& istPkgs) -> std::tuple<std::string, PackageIndex::Info> {
         for (auto const& [path, index] : indices) {
             for (auto const& [key, infos] : index.packages) {

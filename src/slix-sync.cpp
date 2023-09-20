@@ -69,16 +69,16 @@ void app() {
 
     if (cliSearch) {
         for (auto pattern : *cliSearch) {
-            auto opt = indices.findLatest(pattern);
-            if (!opt) continue;
-            auto [path, index, key, info] = *opt;
-            fmt::print("{}@{}#{}\n", key, info->version, info->hash);
-            if (!cliBrief) {
-                fmt::print("    {}\n", info->description);
-            } else {
-                if (cliDependencies) {
-                    for (auto d : info->dependencies) {
-                        fmt::print("{}\n", d);
+            auto res = indices.findMultiLatest(pattern);
+            for (auto [path, index, key, info] : res) {
+                fmt::print("{}@{}#{}\n", key, info->version, info->hash);
+                if (!cliBrief) {
+                    fmt::print("    {}\n", info->description);
+                } else {
+                    if (cliDependencies) {
+                        for (auto d : info->dependencies) {
+                            fmt::print("{}\n", d);
+                        }
                     }
                 }
             }
