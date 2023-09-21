@@ -54,6 +54,12 @@ auto cliDependencies = clice::Argument{ .parent = &cli,
                                         .value  = std::filesystem::path{},
 };
 
+auto cliRemove = clice::Argument{ .parent = &cli,
+                                  .args   = {"-r", "--remove"},
+                                  .desc   = {"removes packages"},
+                                  .value = std::vector<std::string>{},
+};
+
 
 void app() {
     auto app = App {
@@ -68,6 +74,12 @@ void app() {
     auto istPkgs        = app.installedPackages();
     auto indices        = app.loadPackageIndices();
 
+    auto supervisor = PackageSupervisor{};
+    if (exists(getSlixConfigPath() / "config.yaml")) {
+        supervisor.loadFile(getSlixConfigPath() / "config.yaml");
+    }
+
+    // search mode
     if (cliSearch) {
         for (auto pattern : *cliSearch) {
             auto res = indices.findMultiLatest(pattern);
@@ -87,6 +99,38 @@ void app() {
         return;
     }
 
+    // remove mode
+    if (cliRemove) {
+        // remove explicit mentioned packages
+        for (auto pattern : *cliRemove) {
+            auto [key, info] = indices.findPackageInfo(pattern);
+            supervisor.packages[key].explicitMarked = false;
+            fmt::print("removed {}\n", key);
+        }
+
+        // remove environments
+        if (cliInputFile) {
+            bool found{};
+            for (auto& [key, info] : supervisor.packages) {
+                auto iter = info.environments.find(*cliInputFile);
+                if (iter != info.environments.end()) {
+                    found = true;
+                    info.environments.erase(iter);
+                }
+            }
+            if (found) {
+                fmt::print("removed {}\n", *cliInputFile);
+            }
+        }
+        // remove packages that don't have any environments or explicit marks
+        std::erase_if(supervisor.packages, [](auto const& v) {
+            return !v.second.explicitMarked && v.second.environments.empty();
+        });
+
+        supervisor.storeFile(getSlixConfigPath() / "config.yaml");
+        return;
+    }
+
     auto envFile = std::filesystem::path{};
     if (cliUpgrade) {
         envFile = weakly_canonical(getEnvironmentFile());
@@ -97,16 +141,13 @@ void app() {
         fmt::print("Trying to upgrade {}\n", envFile);
     }
 
-    auto supervisor = PackageSupervisor{};
-    if (exists(getSlixConfigPath() / "config.yaml")) {
-        supervisor.loadFile(getSlixConfigPath() / "config.yaml");
-    }
-
-
     auto requiredPkgs    = std::unordered_set<std::string>{};
 
     for (auto p : *cli) {
         auto [key, info] = indices.findPackageInfo(p);
+        if (!supervisor.packages[key].explicitMarked) {
+            fmt::print("adding: {}\n", key);
+        }
         supervisor.packages[key].explicitMarked = true;
         requiredPkgs.merge(indices.findDependencies(p));
     }

@@ -41,19 +41,30 @@ void app() {
         supervisor.loadFile(getSlixConfigPath() / "config.yaml");
     }
 
+    auto trackedEnvFiles = std::set<std::string>{};
+
+    fmt::print("installed packages:\n");
+    // installed packages
     for (auto i : ordered) {
         i = i.substr(0, i.size()-4);
         if (cliAll) {
-            fmt::print("{}\n", i);
+            fmt::print("  - {}\n", i);
         } else {
             auto iter = supervisor.packages.find(i);
             if (iter != supervisor.packages.end()) {
-                if (iter->second.explicitMarked
-                    || iter->second.environments.size() > 0) {
-                    fmt::print("{}\n", i);
+                if (iter->second.explicitMarked) {
+                    fmt::print("  - {}\n", i);
+                }
+                for (auto e : iter->second.environments) {
+                    trackedEnvFiles.insert(e);
                 }
             }
         }
+    }
+
+    fmt::print("registered environments:\n");
+    for (auto t : trackedEnvFiles) {
+        fmt::print("  - {}\n", t);
     }
 }
 }
