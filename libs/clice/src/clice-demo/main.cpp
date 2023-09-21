@@ -136,6 +136,13 @@ auto cliBTOutputPath = clice::Argument{ .parent = &cliBasicTypes,
                                         .desc   = "output path",
                                         .value  = std::filesystem::path{},
                                       };
+auto cliBTInputFile = clice::Argument{ .parent = &cliBasicTypes,
+                                       .args   = "--file",
+                                       .desc   = "file path",
+                                       .value  = std::filesystem::path{},
+                                       .tags   = {"short: FILE"},
+                                     };
+
 auto cliBTVectorInt = clice::Argument{ .parent = &cliBasicTypes,
                                        .args   = "--vector_int",
                                        .desc   = "vector of ints",
@@ -161,6 +168,30 @@ auto cliSD_b       = clice::Argument{ .parent = &cliSingleDash,
                                       .desc   = "some b",
 };
 
+auto cliRequired = clice::Argument{ .args = "required_child",
+                                    .desc   = "this option has a required child option",
+};
+
+auto cliRequiredOpt1 = clice::Argument{ .parent = &cliRequired,
+                                        .args   = "--opt1",
+                                        .desc   = "this option is required",
+                                        .value  = std::string{},
+                                        .tags   = {"required"},
+};
+auto cliRequiredOpt2 = clice::Argument{ .parent = &cliRequired,
+                                        .args  = "--opt2",
+                                        .desc  = "this option is not required",
+                                        .value = std::string{},
+};
+auto cliCompletion = clice::Argument{ .args = "completion",
+                                      .desc = "section allowing to try different completion types",
+};
+auto cliCompletionStaticString = clice::Argument{ .parent = &cliCompletion,
+                                                  .args   = "--str1",
+                                                  .desc   = "static completion",
+                                                  .value = std::string{},
+                                                  .completion = []() -> std::vector<std::string> { return {"foo", "bar", "faa"}; },
+};
 
 int main(int argc, char** argv) {
     try {
@@ -204,6 +235,10 @@ int main(int argc, char** argv) {
         for (auto x : *cliBTVectorInt) {
             std::cout << "    " << x << "\n";
         }
+        std::cout << "\n\nrequired_child: " << cliRequired << "\n";
+        std::cout << "    --opt1: " << cliRequiredOpt1 << " " << *cliRequiredOpt1 << "\n";
+        std::cout << "    --opt2: " << cliRequiredOpt2 << " " << *cliRequiredOpt2 << "\n";
+
     } catch (std::exception const& e) {
         std::cerr << "error: " << e.what() << "\n";
     }

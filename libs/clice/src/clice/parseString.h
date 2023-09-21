@@ -68,12 +68,15 @@ auto parseFromString(std::string_view _str) -> T {
         // parse all integer-like types
         auto ret = T{};
         std::ranges::transform(str, str.begin(), ::tolower);
+        // remove separator '
+        str.erase(std::remove(str.begin(), str.end(), '\''), str.end());
+
         auto base = int{0};
         char const* strBegin = str.data();
         char const* strEnd   = str.data() + str.size();
         std::size_t nextIdx=0;
         if (str.find("0b") == 0) {
-            base=2;
+            base = 2;
             strBegin += 2;
         }
         try {

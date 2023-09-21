@@ -6,74 +6,90 @@
 
 namespace clice {
 
-inline auto generatePartialSynopsis(ArgumentBase const& arg) -> std::string {
-    auto ret = fmt::format("[{}", fmt::join(arg.args, "|"));
-    for (auto child : arg.arguments) {
-        ret += " " + generatePartialSynopsis(*child);
+inline auto typeToString(ArgumentBase const& arg) -> std::string {
+    for (auto t : arg.tags) {
+        if (t.starts_with("short: ")) {
+            if (arg.tags.contains("multi")) {
+                return fmt::format("[{}]...", t.substr(7));
+            }
+            return t.substr(7);
+        }
     }
     if (arg.type_index == std::type_index(typeid(nullptr_t))) {
         //!Nothing to do, this is a flag and doesn't take any parameters
+        return "";
     } else if (arg.mapping) {
-        ret += fmt::format(" [{}]", fmt::join(*arg.mapping, "|"));
+        return fmt::format("[{}]", fmt::join(*arg.mapping, "|"));
     } else if (arg.type_index == std::type_index(typeid(char))) {
-        ret += " CHAR ";
+        return "CHAR";
     } else if (arg.type_index == std::type_index(typeid(bool))) {
-        ret += " [true|false]";
+        return "[true|false]";
     } else if (arg.type_index == std::type_index(typeid(int8_t))) {
-        ret += " INT8";
+        return "INT8";
     } else if (arg.type_index == std::type_index(typeid(uint8_t))) {
-        ret += " UINT8";
+        return "UINT8";
     } else if (arg.type_index == std::type_index(typeid(int16_t))) {
-        ret += " INT16";
+        return "INT16";
     } else if (arg.type_index == std::type_index(typeid(uint16_t))) {
-        ret += " UINT16";
+        return "UINT16";
     } else if (arg.type_index == std::type_index(typeid(int32_t))) {
-        ret += " INT32";
+        return "INT32";
     } else if (arg.type_index == std::type_index(typeid(uint32_t))) {
-        ret += " UINT32";
+        return "UINT32";
     } else if (arg.type_index == std::type_index(typeid(int64_t))) {
-        ret += " INT64";
+        return "INT64";
     } else if (arg.type_index == std::type_index(typeid(uint64_t))) {
-        ret += " UINT64";
+        return "UINT64";
     } else if (arg.type_index == std::type_index(typeid(float))) {
-        ret += " FLOAT";
+        return "FLOAT";
     } else if (arg.type_index == std::type_index(typeid(double))) {
-        ret += " DOUBLE";
+        return "DOUBLE";
     } else if (arg.type_index == std::type_index(typeid(std::string))) {
-        ret += " STRING";
+        return "STRING";
     } else if (arg.type_index == std::type_index(typeid(std::filesystem::path))) {
-        ret += " PATH";
+        return "PATH";
     } else if (arg.type_index == std::type_index(typeid(std::vector<bool>))) {
-        ret += " [true|false] ...";
+        return "[true|false]...";
     } else if (arg.type_index == std::type_index(typeid(std::vector<int8_t>))) {
-        ret += " [INT8] ...";
+        return "[INT8]...";
     } else if (arg.type_index == std::type_index(typeid(std::vector<uint8_t>))) {
-        ret += " [UINT8] ...";
+        return "[UINT8]...";
     } else if (arg.type_index == std::type_index(typeid(std::vector<int16_t>))) {
-        ret += " [INT16] ...";
+        return "[INT16]...";
     } else if (arg.type_index == std::type_index(typeid(std::vector<uint16_t>))) {
-        ret += " [UINT16] ...";
+        return "[UINT16]...";
     } else if (arg.type_index == std::type_index(typeid(std::vector<int32_t>))) {
-        ret += " [INT32] ...";
+        return "[INT32]...";
     } else if (arg.type_index == std::type_index(typeid(std::vector<uint32_t>))) {
-        ret += " [UINT32] ...";
+        return "[UINT32]...";
     } else if (arg.type_index == std::type_index(typeid(std::vector<int64_t>))) {
-        ret += " [INT64] ...";
+        return "[INT64]...";
     } else if (arg.type_index == std::type_index(typeid(std::vector<uint64_t>))) {
-        ret += " [UINT64] ...";
+        return "[UINT64]...";
     } else if (arg.type_index == std::type_index(typeid(std::vector<float>))) {
-        ret += " [FLOAT] ...";
+        return "[FLOAT]...";
     } else if (arg.type_index == std::type_index(typeid(std::vector<double>))) {
-        ret += " [DOUBLE] ...";
+        return "[DOUBLE]...";
     } else if (arg.type_index == std::type_index(typeid(std::vector<std::string>))) {
-        ret += " [STRING] ...";
+        return "[STRING]...";
     } else if (arg.type_index == std::type_index(typeid(std::vector<std::filesystem::path>))) {
-        ret += " [PATH] ...";
-
-    } else {
-        ret += " _unknown_";
+        return "[PATH]...";
     }
-    ret += "]";
+    return "_unknown_";
+}
+
+inline auto generatePartialSynopsis(ArgumentBase const& arg) -> std::string {
+    auto ret = fmt::format("{}", fmt::join(arg.args, "|"));
+
+
+    for (auto child : arg.arguments) {
+        ret += " " + generatePartialSynopsis(*child);
+    }
+    auto typeAsString = typeToString(arg);
+    ret += typeAsString.empty()?"":(" " + typeAsString);
+    if (!arg.tags.contains("required")) {
+        ret = "[" + ret + "]";
+    }
     return  ret;
 }
 inline auto generateSynopsis() -> std::string {
@@ -121,7 +137,9 @@ inline auto generateHelp() -> std::string {
     size_t longestWord{};
     f = [&](auto const& args, std::string ind) {
         for (auto arg : args) {
-            auto argstr = fmt::format("{}{}", ind, fmt::join(arg->args, ", "));
+            auto typeAsString = typeToString(*arg);
+
+            auto argstr = fmt::format("{}{} {}", ind, fmt::join(arg->args, ", "), typeAsString);
             longestWord = std::max(longestWord, argstr.size());
         }
 
@@ -140,14 +158,31 @@ inline auto generateHelp() -> std::string {
 
         for (auto arg : args) {
             if (arg->args.empty() or arg->args[0][0] == '-') continue;
-            auto argstr = fmt::format("{}", fmt::join(arg->args, ", "));
-            ret = ret + fmt::format("{}{:<{}} - {}\n", ind, argstr, longestWord - ind.size(), arg->desc);
+            auto typeAsString = typeToString(*arg);
+
+            auto argstr = fmt::format("{}{} {}", ind, fmt::join(arg->args, ", "), typeAsString);
+            auto tagstr = [&]() -> std::string {
+                if (arg->tags.contains("required")) return "(required)";
+                auto defaultValue = arg->toString();
+                if (!defaultValue) return "";
+                return fmt::format("(default: {})", *defaultValue);
+            }();
+
+            ret = ret + fmt::format("{:<{}} - {} {}\n", argstr, longestWord, arg->desc, tagstr);
             f(arg->arguments, ind + "  ");
         }
         for (auto arg : args) {
             if (arg->args.empty() or arg->args[0][0] != '-') continue;
-            auto argstr = fmt::format("{}", fmt::join(arg->args, ", "));
-            ret = ret + fmt::format("{}{:<{}} - {}\n", ind, argstr, longestWord - ind.size(), arg->desc);
+            auto typeAsString = typeToString(*arg);
+
+            auto argstr = fmt::format("{}{} {}", ind, fmt::join(arg->args, ", "), typeAsString);
+            auto tagstr = [&]() -> std::string {
+                if (arg->tags.contains("required")) return "(required)";
+                auto defaultValue = arg->toString();
+                if (!defaultValue) return "";
+                return fmt::format("(default: {})", *defaultValue);
+            }();
+            ret = ret + fmt::format("{:<{}} - {} {}\n", argstr, longestWord, arg->desc, tagstr);
             f(arg->arguments, ind + "  ");
         }
     };
