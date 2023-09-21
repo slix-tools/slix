@@ -54,10 +54,23 @@ auto cliDependencies = clice::Argument{ .parent = &cli,
                                         .value  = std::filesystem::path{},
 };
 
-auto cliRemove = clice::Argument{ .parent = &cli,
-                                  .args   = {"-r", "--remove"},
-                                  .desc   = {"removes packages"},
-                                  .value = std::vector<std::string>{},
+auto cliRemove = clice::Argument{ .parent     = &cli,
+                                  .args       = {"-r", "--remove"},
+                                  .desc       = {"removes packages"},
+                                  .value      = std::vector<std::string>{},
+                                  .completion = []() {
+                                    auto v = std::vector<std::string>{};
+                                    auto supervisor = PackageSupervisor{};
+                                    if (exists(getSlixConfigPath() / "config.yaml")) {
+                                        supervisor.loadFile(getSlixConfigPath() / "config.yaml");
+                                    }
+                                    for (auto& [key, info] : supervisor.packages) {
+                                        if (info.explicitMarked) {
+                                            v.push_back(key);
+                                        }
+                                    }
+                                    return v;
+                                  },
 };
 
 
