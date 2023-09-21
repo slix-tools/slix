@@ -1,10 +1,15 @@
 #include <clice/clice.h>
-#include <iostream>
+#include <fmt/format.h>
 
 namespace {
+void help() {
+    fmt::print("{}\n", clice::generateHelp());
+    fmt::print("For bash/zsh completion execute `eval \"$(CLICE_GENERATE_COMPLETION=$$ {})\"`\n", clice::argv0);
+    exit(0);
+}
 auto cliHelp = clice::Argument { .args        = {"--help", "-h"},
                                  .desc        = "prints the help page",
-                                 .cb          = []{ std::cout << clice::generateHelp(); exit(0); },
+                                 .cb          = help,
                                  .cb_priority = 10, // 10 is higher priority than default 100
 };
 }
@@ -12,11 +17,11 @@ auto cliHelp = clice::Argument { .args        = {"--help", "-h"},
 int main(int argc, char** argv) {
     try {
         if (auto failed = clice::parse(argc, argv, /*.combineDashes=*/true); failed) {
-            std::cerr << "parsing failed: " << *failed << "\n";
+            fmt::print(stderr, "parsing failed: {}\n", *failed);
             return 1;
         }
     } catch (std::exception const& e) {
-        std::cerr << "error: " << e.what() << "\n";
+        fmt::print(stderr, "error: {}\n", e.what());
     }
     return 0;
 }
