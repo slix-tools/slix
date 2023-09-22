@@ -158,6 +158,13 @@ inline auto encodeURL(std::string input) -> std::string {
     return output;
 }
 
+
+inline auto is_link_to_directory(std::filesystem::path p) {
+    if (is_directory(p)) return true;
+    if (is_symlink(p)) return is_link_to_directory(read_symlink(p));
+    return false;
+}
+
 /**
  * load all package indices
  */
@@ -165,7 +172,7 @@ inline auto loadPackageIndices() -> PackageIndices {
     auto pathUpstreams = getUpstreamsPath();
     auto indices = std::unordered_map<std::filesystem::path, PackageIndex>{};
     for (auto const& e : std::filesystem::directory_iterator{pathUpstreams}) {
-        if (!is_directory(e)) continue;
+        if (!is_link_to_directory(e.path())) continue;
         if (!exists(e.path() / "index.db")) continue;
         auto& index = indices[e.path()];
         index.loadFile(e.path() / "index.db");

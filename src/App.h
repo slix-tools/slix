@@ -70,7 +70,7 @@ struct App {
     void visitUpstreamsConfig(std::function<void(std::filesystem::path path, UpstreamConfig const& config)> cb) {
         auto pathUpstreams = getUpstreamsPath();
         for (auto const& e : std::filesystem::directory_iterator{pathUpstreams}) {
-            if (!is_directory(e)) continue;
+            if (!is_link_to_directory(e.path())) continue;
             if (!exists(e.path() / "config.yaml")) {
                 throw error_fmt{"upstream folder {} is missing config.yaml file", e.path()};
             }
@@ -108,15 +108,7 @@ struct App {
      * load all available(cached) remote indices
      */
     auto loadPackageIndices() -> PackageIndices {
-        auto pathUpstreams = getUpstreamsPath();
-        auto indices = std::unordered_map<std::filesystem::path, PackageIndex>{};
-        for (auto const& e : std::filesystem::directory_iterator{pathUpstreams}) {
-            if (!is_directory(e)) continue;
-            if (!exists(e.path() / "index.db")) continue;
-            auto& index = indices[e.path()];
-            index.loadFile(e.path() / "index.db");
-        }
-        return {indices};
+        return ::loadPackageIndices();
     }
 
     /** returns a list of installed packages - including the trailing .gar
