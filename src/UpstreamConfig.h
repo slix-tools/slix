@@ -1,32 +1,46 @@
 #pragma once
 
+#include "error_fmt.h"
+
 #include <filesystem>
-#include <string>
+#include <fmt/format.h>
 #include <fstream>
+#include <string>
 #include <vector>
+#include <yaml-cpp/yaml.h>
 
 struct UpstreamConfig {
-    std::string path;
-    std::string type;
+    std::string path = "https://slix-tools.de/packages";
+    std::string type = "https";
+    bool shared = false;
 
-    static auto readLines(std::filesystem::path const& script) -> std::vector<std::string> {
-        auto results = std::vector<std::string>{};
-        auto ifs = std::ifstream{script};
-        auto line = std::string{};
-        while (std::getline(ifs, line)) {
-            results.push_back(line);
-        }
-        return results;
+    void storeFile(std::filesystem::path path) {
+        std::filesystem::create_directories(path.parent_path());
+
+        auto yaml = YAML::Node{};
+        yaml["version"] = 1;
+        yaml["path"]    = path.string();
+        yaml["type"]    = type;
+        yaml["shared"]  = shared;
+
+        auto ofs = std::ofstream{path, std::ios::binary};
+        auto emitter = YAML::Emitter{};
+        emitter << yaml;
+        fmt::print(ofs, "{}", emitter.c_str());
     }
 
-    void loadFile(std::filesystem::path _path) {
-        auto lines = readLines(_path);
-        for (auto l : lines) {
-            if (l.starts_with("path=")) path = l.substr(5);
-            if (l.starts_with("type=")) type = l.substr(5);
+
+    void loadFile(std::filesystem::path path) {
+        auto yaml = YAML::LoadFile(path);
+        if (yaml["version"].as<int>() == 1) {
+            loadFileV1(yaml);
+        } else {
+            throw error_fmt("unknown file format");
         }
     }
-    bool valid() const {
-        return !path.empty() and !type.empty();
+    void loadFileV1(YAML::Node yaml) {
+        path   = yaml["path"].as<std::string>();
+        type   = yaml["type"].as<std::string>();
+        shared = yaml["shared"].as<bool>();
     }
 };

@@ -61,8 +61,8 @@ auto cliRemove = clice::Argument{ .parent     = &cli,
                                   .completion = []() {
                                     auto v = std::vector<std::string>{};
                                     auto supervisor = PackageSupervisor{};
-                                    if (exists(getSlixConfigPath() / "config.yaml")) {
-                                        supervisor.loadFile(getSlixConfigPath() / "config.yaml");
+                                    if (exists(getSlixConfigPath() / "supervisior.yaml")) {
+                                        supervisor.loadFile(getSlixConfigPath() / "supervisior.yaml");
                                     }
                                     for (auto& [key, info] : supervisor.packages) {
                                         if (info.explicitMarked) {
@@ -88,8 +88,8 @@ void app() {
     auto indices        = app.loadPackageIndices();
 
     auto supervisor = PackageSupervisor{};
-    if (exists(getSlixConfigPath() / "config.yaml")) {
-        supervisor.loadFile(getSlixConfigPath() / "config.yaml");
+    if (exists(getSlixConfigPath() / "supervisior.yaml")) {
+        supervisor.loadFile(getSlixConfigPath() / "supervisior.yaml");
     }
 
     // search mode

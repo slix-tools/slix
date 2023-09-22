@@ -165,9 +165,10 @@ inline auto loadPackageIndices() -> PackageIndices {
     auto pathUpstreams = getUpstreamsPath();
     auto indices = std::unordered_map<std::filesystem::path, PackageIndex>{};
     for (auto const& e : std::filesystem::directory_iterator{pathUpstreams}) {
-        if (e.path().extension() != ".db") continue;
+        if (!is_directory(e)) continue;
+        if (!exists(e.path() / "index.db")) continue;
         auto& index = indices[e.path()];
-        index.loadFile(e.path());
+        index.loadFile(e.path() / "index.db");
     }
     return {indices};
 }

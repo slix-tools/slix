@@ -27,10 +27,9 @@ struct App {
         }
         if (!exists(path_upstreams) or !reset) {
             std::filesystem::remove_all(path_upstreams);
-            std::filesystem::create_directories(path_upstreams);
-            auto ofs = std::ofstream{path_upstreams / "slix-tools.de.conf"};
-            ofs << "path=https://slix-tools.de/packages/\ntype=https\n";
-            ofs.close();
+
+            UpstreamConfig{}.storeFile("slix-tools.de/config.yaml");
+
             // if reset, also remove all packages
             if (reset) {
                 auto slixStatePath = getSlixStatePath();
@@ -71,10 +70,12 @@ struct App {
     void visitUpstreamsConfig(std::function<void(std::filesystem::path path, UpstreamConfig const& config)> cb) {
         auto pathUpstreams = getUpstreamsPath();
         for (auto const& e : std::filesystem::directory_iterator{pathUpstreams}) {
-            if (e.path().extension() != ".conf") continue;
+            if (!is_directory(e)) continue;
+            if (!exists(e.path() / "config.yaml")) {
+                throw error_fmt{"upstream folder {} is missing config.yaml file", e.path()};
+            }
             auto config = UpstreamConfig{};
-            config.loadFile(e.path());
-            if (!config.valid()) throw error_fmt{"invalid config file {}", e.path().string()};
+            config.loadFile(e.path() / "config.yaml");
 
             cb(e.path(), config);
         }
@@ -89,12 +90,12 @@ struct App {
                 if (!std::filesystem::exists(config.path)) throw error_fmt{"unknown upstream file path {}", config.path};
 
                 auto source = config.path + "/index.db";
-                auto dest   = path.string() + ".db";
+                auto dest   = path / "index.db";
                 std::filesystem::copy_file(source, dest, std::filesystem::copy_options::overwrite_existing);
                 fmt::print("pulled update from {}\n", config.path);
             } else if (config.type == "https") {
                 auto source = config.path + "/index.db";
-                auto dest   = path.string() + ".db";
+                auto dest   = path / "index.db";
                 downloadFile(source, dest, false);
                 fmt::print("pulled update from {}\n", config.path);
             } else {
@@ -110,9 +111,10 @@ struct App {
         auto pathUpstreams = getUpstreamsPath();
         auto indices = std::unordered_map<std::filesystem::path, PackageIndex>{};
         for (auto const& e : std::filesystem::directory_iterator{pathUpstreams}) {
-            if (e.path().extension() != ".db") continue;
+            if (!is_directory(e)) continue;
+            if (!exists(e.path() / "index.db")) continue;
             auto& index = indices[e.path()];
-            index.loadFile(e.path());
+            index.loadFile(e.path() / "index.db");
         }
         return {indices};
     }

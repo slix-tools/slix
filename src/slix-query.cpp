@@ -37,8 +37,8 @@ void app() {
     auto ordered = std::set<std::string>{istPkgs.begin(), istPkgs.end()};
 
     auto supervisor = PackageSupervisor{};
-    if (exists(getSlixConfigPath() / "config.yaml")) {
-        supervisor.loadFile(getSlixConfigPath() / "config.yaml");
+    if (exists(getSlixConfigPath() / "supervisior.yaml")) {
+        supervisor.loadFile(getSlixConfigPath() / "supervisior.yaml");
     }
 
     auto trackedEnvFiles = std::set<std::string>{};

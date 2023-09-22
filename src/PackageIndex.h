@@ -213,7 +213,6 @@ struct PackageIndices {
         auto config = UpstreamConfig{};
         config.loadFile(config_path);
 
-        if (!config.valid()) throw error_fmt{"invalid config {}", config_path.string()};
         return config;
     }
 };
