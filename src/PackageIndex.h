@@ -13,6 +13,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <yaml-cpp/yaml.h>
 
 struct PackageIndex {
     struct Info {
@@ -24,107 +25,50 @@ struct PackageIndex {
     std::unordered_map<std::string, std::vector<Info>> packages;
 
     void storeFile(std::filesystem::path path) {
-        auto ofs = std::ofstream{path, std::ios::binary};
-        fmt::print(ofs, "version: 2\n");
-        fmt::print(ofs, "packages:\n");
+        auto yaml = YAML::Node{};
+        yaml["version"] = 2;
         for (auto const& [key, infos] : packages) {
-            fmt::print(ofs, "  - name: {}\n", key);
-            fmt::print(ofs, "    versions:\n");
+            auto node = YAML::Node{};
+            node["name"] = key;
             for (auto const& info : infos) {
-                fmt::print(ofs, "      - version: {}\n", info.version);
-                fmt::print(ofs, "        hash: {}\n", info.hash);
-                fmt::print(ofs, "        description: {}\n", info.description);
-                fmt::print(ofs, "        dependencies:\n");
+                auto node2 = YAML::Node{};
+                node2["version"]     = info.version;
+                node2["hash"]        = info.hash;
+                node2["description"] = info.description;
                 for (auto const& i : info.dependencies) {
-                    fmt::print(ofs, "          - {}\n", i);
+                    node2["dependencies"].push_back(i);
                 }
+                node["versions"].push_back(node2);
             }
+            yaml["packages"].push_back(node);
         }
+        auto ofs = std::ofstream{path, std::ios::binary};
+        auto emitter = YAML::Emitter{};
+        emitter << yaml;
+        fmt::print(ofs, "{}", emitter.c_str());
     }
     void loadFile(std::filesystem::path path) {
-        // Peek first line
-        auto ifs = std::ifstream{path, std::ios::binary};
-        auto line = std::string{};
-        if (!ifs.good()) throw std::runtime_error{"trouble loading PackageIndex file: " + path.string()};
-        if (!std::getline(ifs, line)) throw std::runtime_error{"trouble loading PackageIndex, empty file? " + path.string()};
-        if (!line.starts_with("version: ")) {
-            loadFileV1(path);
-        } else if (line == "version: 2") {
-            loadFileV2(path);
+        auto yaml = YAML::LoadFile(path);
+        if (yaml["version"].as<int>() == 2) {
+            loadFileV2(yaml);
         } else {
-            throw error_fmt("unknown file format version: {}\n", line);
+            throw error_fmt("unknown file format");
         }
     }
-    void loadFileV1(std::filesystem::path path) {
-        auto entry = std::optional<std::pair<std::string, std::vector<Info>>>{};
-
-        auto ifs = std::ifstream{path, std::ios::binary};
-        auto line = std::string{};
-        if (!ifs.good()) throw std::runtime_error{"trouble loading PackageIndex file: " + path.string()};
-        while (std::getline(ifs, line)) {
-            if (line.empty()) continue;
-            if (line.starts_with("  - ")) {
-                if (!entry) throw std::runtime_error{"unexpected entry in " + path.string()};
-                line = line.substr(4);
-                auto pos = line.find(' ');
-                if (pos == std::string::npos) throw std::runtime_error{"unexpected entry in " + path.string()};
-                entry->second.push_back(Info{});
-                entry->second.back().version = line.substr(pos+1);
-                entry->second.back().hash    = line.substr(0, pos);
-            } else if (line.starts_with("    - ")) {
-                if (!entry) throw std::runtime_error{"unexpected entry in " + path.string()};
-                entry->second.back().dependencies.push_back(line.substr(6));
-            } else {
-                if (entry and !entry->second.empty()) {
-                    packages.try_emplace(entry->first, entry->second);
-                    entry.reset();
+    void loadFileV2(YAML::Node yaml) {
+        for (auto p : yaml["packages"]) {
+            auto name = p["name"].as<std::string>();
+            for (auto const& e : p["versions"]) {
+                auto info = Info {
+                    .version     = e["version"].as<std::string>(),
+                    .hash        = e["hash"].as<std::string>(),
+                    .description = e["description"].as<std::string>(),
+                };
+                for (auto d : e["dependencies"]) {
+                    info.dependencies.push_back(d.as<std::string>());
                 }
-                line = line.substr(0, line.size()-1);
-                entry.emplace(line, std::vector<Info>{});
+                packages[name].push_back(info);
             }
-        }
-        if (entry) {
-            packages.try_emplace(entry->first, entry->second);
-            entry.reset();
-        }
-    }
-    void loadFileV2(std::filesystem::path path) {
-        auto entry = std::optional<std::pair<std::string, std::vector<Info>>>{};
-
-        auto ifs = std::ifstream{path, std::ios::binary};
-        auto line = std::string{};
-        if (!ifs.good()) throw std::runtime_error{"trouble loading PackageIndex file: " + path.string()};
-        std::getline(ifs, line); // ignore first line with "version: 2"
-        while (std::getline(ifs, line)) {
-            if (line.empty()) continue;
-            if (line == "packages:") continue;
-            if (line.starts_with("  - name: ")) {
-                if (entry and !entry->second.empty()) {
-                    packages.try_emplace(entry->first, entry->second);
-                }
-                entry.emplace(line.substr(10), std::vector<Info>{});
-            } else if (line == "    versions:") {
-            } else if (line.starts_with("      - version: ")) {
-                entry->second.emplace_back();
-                entry->second.back().version = line.substr(17);
-            } else if (line.starts_with("        hash: ")) {
-                if (!entry) throw error_fmt{"unexpected entry in {}", path.string()};
-                entry->second.back().hash = line.substr(14);
-            } else if (line.starts_with("        description: ")) {
-                if (!entry) throw error_fmt{"unexpected entry in {}", path.string()};
-                entry->second.back().description = line.substr(21);
-            } else if (line.starts_with("        dependencies:")) {
-                if (!entry) throw error_fmt{"unexpected entry in {}", path.string()};
-            } else if (line.starts_with("          - ")) {
-                if (!entry) throw error_fmt{"unexpected entry in {}", path.string()};
-                entry->second.back().dependencies.push_back(line.substr(12));
-            } else {
-                throw error_fmt{"unexpected entry in {}", path.string()};
-            }
-        }
-        if (entry) {
-            packages.try_emplace(entry->first, entry->second);
-            entry.reset();
         }
     }
 };
