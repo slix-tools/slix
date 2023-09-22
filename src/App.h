@@ -25,7 +25,7 @@ struct App {
         if (exists(path_upstreams) and !reset) {
             return;
         }
-        if (!exists(path_upstreams) or !reset) {
+        if (!exists(path_upstreams) or reset) {
             std::filesystem::remove_all(path_upstreams);
 
             UpstreamConfig{}.storeFile("slix-tools.de/config.yaml");
