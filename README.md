@@ -22,5 +22,8 @@ If slix is not installed on your system, you can install it into your user space
    or add it to your .bashrc for permanent availability
 
 
-## Activating zsh/bash completion
+# How to build your own slix package
+
+## Cool stuff
+# Activating zsh/bash completion
 just run `eval "$(CLICE_GENERATE_COMPLETION=$$ slix)"` and it will be available
