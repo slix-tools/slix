@@ -2,8 +2,6 @@
 #include "slix.h"
 #include "utils.h"
 #include "PackageIndex.h"
-#include "PackageSupervisor.h"
-#include "UpstreamConfig.h"
 #include "Stores.h"
 
 #include <clice/clice.h>
@@ -40,8 +38,13 @@ auto cliSearch = clice::Argument{ .parent = &cli,
 };
 
 auto cliDependencies = clice::Argument{ .parent = &cliSearch,
-                                        .args   = {"-d"},
+                                        .args   = {"-d", "--dependencies"},
                                         .desc   = "list all dependencies",
+                                        .value  = std::vector<std::string>{},
+};
+auto cliBrief = clice::Argument{ .parent = &cliSearch,
+                                 .args   = {"-b"},
+                                 .desc   = "keep output brief"
 };
 
 
@@ -74,13 +77,22 @@ void app() {
         for (auto name : *cliSearch) {
             auto names = stores.findExactName(name);
             for (auto n : names) {
-                fmt::print("{}{}\n", n, stores.isInstalled(n)?" (installed)":"");
+                if (cliBrief) {
+                    fmt::print("{}\n", n);
+                } else {
+                    fmt::print("{}{}\n", n, stores.isInstalled(n)?" (installed)":"");
+                }
                 if (cliDependencies) {
                     auto [knownList, installedStore] = stores.findExactPattern(n);
                     if (installedStore) {
                         auto deps = installedStore->loadPackageIndex().findDependencies(n);
                         for (auto d : std::set<std::string>{deps.begin(), deps.end()}) {
-                            fmt::print("d: {}\n", d);
+                            if (cliBrief) {
+                                fmt::print("{}\n", d);
+                            } else {
+                                bool isInstalled = stores.isInstalled(d);
+                                fmt::print("- {}{}\n", d, isInstalled?" (installed)":"");
+                            }
                         }
 
                     }

@@ -3,6 +3,7 @@
 #include "slix.h"
 #include "utils.h"
 #include "PackageIndex.h"
+#include "Stores.h"
 
 #include <atomic>
 #include <clice/clice.h>
@@ -50,8 +51,9 @@ void app() {
     };
     app.init();
 
-    auto istPkgs        = app.installedPackages();
-    auto indices        = app.loadPackageIndices();
+    storeInit();
+    auto storePath = getSlixConfigPath() / "stores";
+
 
     auto mountPoint = [&]() -> std::string {
         if (cliMountPoint) {
@@ -66,7 +68,31 @@ void app() {
 
     auto handle = mountAndWait(clice::argv0, mountPoint, *cli, cliVerbose, cliAllowOther);
 
-    auto cmd = scanDefaultCommand(*cli, indices, istPkgs, *cliCommand);
+    auto stores = Stores{storePath};
+    auto installedPackagePaths = std::unordered_map<std::string, std::filesystem::path>{};
+    for (auto i : stores.installedPackages) {
+        installedPackagePaths.try_emplace(i, stores.getPackagePath(i));
+    }
+
+    auto cmd = [&]() -> std::vector<std::string> {
+        if (cliCommand->size()) return *cliCommand;
+        auto fullNames = std::vector<std::string>{};
+        for (auto name : *cli) {
+            auto names = stores.findExactName(name);
+            bool added = false;
+            for (auto n : names) {
+                if (stores.isInstalled(n)) {
+                    fullNames.push_back(n);
+                    added = true;
+                    break;
+                }
+            }
+            if (!added) {
+                throw error_fmt{"unknown package {}", name};
+            }
+        }
+        return scanDefaultCommand(fullNames, installedPackagePaths);
+    }();
 
     // set argv variables
     cmd.insert(cmd.begin(), "/usr/bin/env");

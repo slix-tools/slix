@@ -103,6 +103,21 @@ public:
         return installedPackages.contains(pattern);
     }
 
+    auto getPackagePath(std::string fullPackageName) const -> std::filesystem::path {
+        auto posAt   = fullPackageName.rfind('@');
+        auto posHash = fullPackageName.rfind('#');
+        if (posAt == std::string::npos || posHash == std::string::npos) {
+            throw error_fmt{"invalid package name {}", fullPackageName};
+        }
+
+        for (auto& store : stores) {
+            if (store.isInstalled(fullPackageName)) {
+                return store.getPackagePath(fullPackageName);
+            }
+        }
+        throw error_fmt{"can't find any installed path for {}", fullPackageName};
+    }
+
     /** Will install the package matching the pattern (latest, or specific version if fully qualified)
      */
     void install(std::string pattern, bool explicitMarked, bool saveState = true) {

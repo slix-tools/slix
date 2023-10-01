@@ -75,6 +75,8 @@ private:
 struct StoreState {
     std::unordered_map<std::string, std::unordered_set<std::string>> packages;
 
+    /** Check if full qualified name is installed
+     */
     bool isInstalled(std::string pattern) const {
         auto posAt   = pattern.rfind('@');
         auto posHash = pattern.rfind('#');
@@ -169,6 +171,10 @@ public:
 
     auto getPackagePath(std::string fullPackageName) const -> std::filesystem::path {
         return getSlixStatePath() / this->name / "packages" / (fullPackageName + ".gar");
+    }
+
+    bool isInstalled(std::string fullPackageName) const {
+        return state.isInstalled(fullPackageName);
     }
 
     //!TODO not atomic writing

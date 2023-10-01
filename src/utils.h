@@ -165,21 +165,6 @@ inline auto is_link_to_directory(std::filesystem::path p) {
     return false;
 }
 
-/**
- * load all package indices
- */
-inline auto loadPackageIndices() -> PackageIndices {
-    auto pathUpstreams = getUpstreamsPath();
-    auto indices = std::unordered_map<std::filesystem::path, PackageIndex>{};
-    for (auto const& e : std::filesystem::directory_iterator{pathUpstreams}) {
-        if (!is_link_to_directory(e.path())) continue;
-        if (!exists(e.path() / "index.db")) continue;
-        auto& index = indices[e.path()];
-        index.loadFile(e.path() / "index.db");
-    }
-    return {indices};
-}
-
 inline void execute(std::vector<std::string> const& _argv, std::map<std::string, std::string> _envp, bool verbose, bool keepEnv) {
     // set argv variables
     auto argv = std::vector<char const*>{};
@@ -264,26 +249,21 @@ inline auto mountAndWait(std::filesystem::path argv0, std::filesystem::path moun
     return ifs;
 }
 
-inline auto scanDefaultCommand(std::vector<std::string> packages, PackageIndices& indices, std::unordered_set<std::string> istPkgs, std::vector<std::string> cmd) -> std::vector<std::string> {
-    if (cmd.empty()) {
-        auto slixPkgPaths = std::vector{getSlixStatePath() / "packages"};
-        for (auto input : packages) {
-            // find name of package
-            auto [fullName, info] = indices.findInstalled(input, istPkgs);
-            if (fullName.empty()) {
-                throw error_fmt{"can not find any installed package for {}", input};
-            }
-            // find package location
-            auto path = searchPackagePath(slixPkgPaths, fullName + ".gar");
-            auto fuse = GarFuse{path, false};
-            cmd = fuse.defaultCmd;
-            if (!cmd.empty()) break;
+inline auto scanDefaultCommand(std::vector<std::string> packages, std::unordered_map<std::string, std::filesystem::path> const& packagePaths) -> std::vector<std::string> {
+    for (auto input : packages) {
+        // find name of package
+        auto iter = packagePaths.find(input);
+        if (iter == packagePaths.end()) {
+            throw error_fmt{"can not find any installed package for {}", input};
+        }
+
+        // find package location
+        auto fuse = GarFuse{iter->second, false};
+        if (fuse.defaultCmd.size()) {
+            return fuse.defaultCmd;
         }
     }
-    if (cmd.empty()) {
-        throw error_fmt{"no command given"};
-    }
-    return cmd;
+    throw error_fmt{"no command given"};
 }
 
 /*

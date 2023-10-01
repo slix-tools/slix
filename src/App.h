@@ -104,26 +104,6 @@ struct App {
         });
     }
 
-    /**
-     * load all available(cached) remote indices
-     */
-    auto loadPackageIndices() -> PackageIndices {
-        return ::loadPackageIndices();
-    }
-
-    /** returns a list of installed packages - including the trailing .gar
-     */
-    auto installedPackages() -> std::unordered_set<std::string> {
-        auto slixPkgPaths = std::vector{getSlixStatePath() / "packages"};
-        auto results = std::unordered_set<std::string>{};
-        for (auto p : slixPkgPaths) {
-            for (auto pkg : std::filesystem::directory_iterator{p}) {
-                results.insert(pkg.path().filename().string());
-            }
-        }
-        return results;
-    }
-
     /** Installs a single package
      */
     void installPackage(std::string package, UpstreamConfig const& config) {
