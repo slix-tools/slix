@@ -18,6 +18,9 @@ struct Reader {
     Reader(std::filesystem::path path_)
         : ifs{path_, std::ios::binary}
     {
+        if (!ifs.good()) {
+            throw std::runtime_error{"could not open file: " + path_.string()};
+        }
         auto defaultFileHeader = fsx::FileHeader{};
         auto header = readPOD<fsx::FileHeader>();
         if (header != defaultFileHeader) {

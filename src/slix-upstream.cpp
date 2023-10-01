@@ -21,7 +21,8 @@ auto cli = clice::Argument{ .args   = {"upstream"},
                             .cb     = app,
 };
 
-auto cliAdd = clice::Argument{ .args   = {"add"},
+auto cliAdd = clice::Argument{ .parent = &cli,
+                               .args   = {"add"},
                                .desc   = "add a upstream config",
                                .value  = std::filesystem::path{},
 };
