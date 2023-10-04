@@ -120,7 +120,7 @@ public:
 
     /** Will install the package matching the pattern (latest, or specific version if fully qualified)
      */
-    void install(std::string pattern, bool explicitMarked, bool saveState = true) {
+    bool install(std::string pattern, bool explicitMarked, bool saveState = true) {
         auto posAt   = pattern.rfind('@');
         auto posHash = pattern.rfind('#');
         if (posAt == std::string::npos || posHash == std::string::npos) {
@@ -140,7 +140,7 @@ public:
         }
 
 
-        if (isInstalled(pattern)) return;
+        if (isInstalled(pattern)) return false;
 
         auto name    = pattern.substr(0, posAt);
         auto version = pattern.substr(posAt+1, posHash-posAt-1);
@@ -171,6 +171,7 @@ public:
         if (saveState) {
             store->state.save(getSlixStatePath() / store->name / "state.yaml");
         }
+        return true;
     }
 
     /** finds an exact packages

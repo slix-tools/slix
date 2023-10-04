@@ -66,7 +66,10 @@ void app() {
         // Load all stores, and check if it is already available
         auto stores = Stores{storePath};
         for (auto i : *cliInstall) {
-            stores.install(i, /*.explictMarked=*/true);
+            bool newlyInstalled = stores.install(i, /*.explictMarked=*/true);
+            if (!newlyInstalled) {
+                fmt::print("package {} was already installed\n", i);
+            }
         }
         stores.save(getSlixStatePath() / "stores.yaml");
     } else if (cliSearch) {
