@@ -118,33 +118,25 @@ public:
         throw error_fmt{"can't find any installed path for {}", fullPackageName};
     }
 
-    /** Will install the package matching the pattern (latest, or specific version if fully qualified)
+    /** \brief Fetch a package dependencies
+     *
+     * \param pattern: full qualified package name
+     * \return: list of packages and their stores
      */
-    bool install(std::string pattern, bool explicitMarked, bool saveState = true) {
+    auto getPackageAndDependencies(std::string pattern) -> std::tuple<Store*, std::unordered_set<std::string>> {
         auto posAt   = pattern.rfind('@');
         auto posHash = pattern.rfind('#');
         if (posAt == std::string::npos || posHash == std::string::npos) {
-            auto names = findExactName(pattern);
-            if (names.empty()) throw error_fmt{"could not find any package with name {}\n", pattern};
-            if (names.size() > 1) throw error_fmt{"find multiple packages which could be the latest one, with name {}\n", pattern};
-            pattern = names[0];
-            posAt   = pattern.rfind('@');
-            posHash = pattern.rfind('#');
+            throw error_fmt{"package is not fully qualified {}\n", pattern};
         }
 
-        if (explicitMarked && !packagesMarked[pattern].explicitMarked) {
-            packagesMarked[pattern].explicitMarked = true;
-            packagesMarked[pattern].dependencyCount += 1;
-        } else if (!explicitMarked) {
-            packagesMarked[pattern].dependencyCount += 1;
-        }
-
-
-        if (isInstalled(pattern)) return false;
+        auto res = std::unordered_set<std::string>{};
 
         auto name    = pattern.substr(0, posAt);
         auto version = pattern.substr(posAt+1, posHash-posAt-1);
         auto hash    = pattern.substr(posHash+1);
+
+        res.insert(pattern);
 
         // Fetch store and name of dependencies
         auto [store, dependencies] = [&]() -> std::tuple<Store*, std::vector<std::string>> {
@@ -161,17 +153,76 @@ public:
             throw error_fmt{"couldn't find any store offering the package {}", pattern};
         }();
 
-        // install dependencies
         for (auto const& d : dependencies) {
-            install(d, /*.explicitMarked=*/ false, /*.saveState=*/ false);
+            res.insert(d);
         }
-        // install
-        store->install(pattern, cliVerbose);
-        installedPackages.insert(pattern);
-        if (saveState) {
-            store->state.save(getSlixStatePath() / store->name / "state.yaml");
+        return {store, res};
+    }
+
+    /** Will install the package matching the pattern (latest, or specific version if fully qualified)
+     *
+     * \param pattern:        full qualified name
+     * \param explicitMarked: was this file explicit marked by user?
+     * \param file:           package is required by environmentFile
+     */
+    bool install(std::string pattern, bool explicitMarked, std::string file) {
+        auto posAt   = pattern.rfind('@');
+        auto posHash = pattern.rfind('#');
+        if (posAt == std::string::npos || posHash == std::string::npos) {
+            auto names = findExactName(pattern);
+            if (names.empty()) throw error_fmt{"could not find any package with name {}\n", pattern};
+            if (names.size() > 1) throw error_fmt{"find multiple packages which could be the latest one, with name {}\n", pattern};
+            pattern = names[0];
+            posAt   = pattern.rfind('@');
+            posHash = pattern.rfind('#');
         }
-        return true;
+
+        //Dependency also
+        auto [store, dependencies] = getPackageAndDependencies(pattern);
+
+        bool newlyInstalled = false;
+        for (auto const& p : dependencies) {
+            if (!isInstalled(p)) {
+                store->install(p, cliVerbose);
+                newlyInstalled = true;
+            }
+            installedPackages.insert(p);
+            packagesMarked[p].dependencyCount += 1;
+            if (explicitMarked and p == pattern and !packagesMarked[p].explicitMarked) {
+                packagesMarked[p].explicitMarked = true;
+                newlyInstalled = true;
+            }
+            if (!file.empty()) {
+                packagesMarked[p].environmentFiles.insert(file);
+            }
+        }
+        store->state.save(getSlixStatePath() / store->name / "state.yaml");
+        return newlyInstalled;
+    }
+
+    /** Get explicit installed packages
+     */
+    auto getExplicitInstalledPackages() const -> std::unordered_set<std::string> {
+        auto res = std::unordered_set<std::string>{};
+        for (auto const& [name, markings] : packagesMarked) {
+            if (markings.explicitMarked) {
+                res.insert(name);
+            }
+        }
+        return res;
+    }
+
+
+    /** Get installed environments files
+     */
+    auto getInstalledEnvironmentFiles() const -> std::unordered_set<std::string> {
+        auto res = std::unordered_set<std::string>{};
+        for (auto const& [name, markings] : packagesMarked) {
+            for (auto const& e : markings.environmentFiles) {
+                res.insert(e);
+            }
+        }
+        return res;
     }
 
     /** finds an exact packages

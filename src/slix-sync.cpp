@@ -47,6 +47,12 @@ auto cliBrief = clice::Argument{ .parent = &cliSearch,
                                  .desc   = "keep output brief"
 };
 
+auto cliList = clice::Argument{ .parent = &cli,
+                                .args   = {"--list", "-l"},
+                                .desc   = "list installed packages",
+};
+
+
 void app() {
     auto app = App {
         .verbose = cliVerbose,
@@ -66,9 +72,27 @@ void app() {
         // Load all stores, and check if it is already available
         auto stores = Stores{storePath};
         for (auto i : *cliInstall) {
-            bool newlyInstalled = stores.install(i, /*.explictMarked=*/true);
-            if (!newlyInstalled) {
-                fmt::print("package {} was already installed\n", i);
+            if (exists(std::filesystem::path(i))) {
+                i = absolute(std::filesystem::path(i)).string();
+                auto envs = stores.getInstalledEnvironmentFiles();
+                if (envs.contains(i)) {
+                    fmt::print("environment {} was already installed\n", i);
+                    continue;
+                }
+                auto packages = readSlixEnvFile(i);
+                for (auto p : packages) {
+                    stores.install(p, /*.explictMarked=*/false, i);
+                }
+                fmt::print("environment {} installed\n", i);
+
+
+            } else {
+                bool newlyInstalled = stores.install(i, /*.explictMarked=*/true, "");
+                if (!newlyInstalled) {
+                    fmt::print("package {} was already installed\n", i);
+                } else {
+                    fmt::print("package {} installed\n", i);
+                }
             }
         }
         stores.save(getSlixStatePath() / "stores.yaml");
@@ -100,6 +124,27 @@ void app() {
                 }
             }
         }
+    } else if (cliList) {
+        // Go through store by store and search
+        auto stores = Stores{storePath};
+
+        auto installedEnvironmentFiles = stores.getInstalledEnvironmentFiles();
+        auto explicitInstalledPackages = stores.getExplicitInstalledPackages();
+
+        if (explicitInstalledPackages.size() > 0) {
+            fmt::print("explicit packages:\n");
+            for (auto p : explicitInstalledPackages) {
+                fmt::print("- {}\n", p);
+            }
+        }
+
+        if (installedEnvironmentFiles.size() > 0) {
+            fmt::print("environment files:\n");
+            for (auto f : installedEnvironmentFiles) {
+                fmt::print("- {}\n", f);
+            }
+        }
+
     } else {
         auto packageNames = std::set<std::string>{};
         for (auto const& e : std::filesystem::directory_iterator{storePath}) {
