@@ -276,15 +276,21 @@ inline auto readSlixEnvFile(std::filesystem::path const& script) -> std::vector<
     auto results = std::vector<std::string>{};
     auto ifs = std::ifstream{script};
     auto line = std::string{};
-    std::getline(ifs, line); // ignore first line
     while (std::getline(ifs, line)) {
+        // remove leading white spaces
         while (!line.empty() && line[0] == ' ') {
             line = line.substr(1);
         }
+        // remove trailing white spaces
         while (!line.empty() && line.back() == ' ') {
             line = line.substr(0, line.size()-1);
         }
+        // ignore lines that are empty
         if (line.empty()) continue;
+
+        // ignore lines starting with '#'
+        if (line[0] == '#') continue;
+
         results.push_back(line);
     }
     return results;

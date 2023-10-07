@@ -268,6 +268,15 @@ public:
     }
 
     auto findExactName(std::string name) -> std::vector<std::string> {
+        // Check if name is already fully qualified
+        auto posAt   = name.rfind('@');
+        auto posHash = name.rfind('#');
+        if (posAt   != std::string::npos
+            && posHash != std::string::npos
+            && posHash > posAt) {
+                return {name};
+        }
+
         auto result = std::vector<std::string>{};
 
         // check if any store is already has it on the shelf

@@ -25,24 +25,20 @@ auto cli = clice::Argument{ .args   = "run",
                             .value  = std::vector<std::string>{},
                             .cb     = app,
 };
-
 auto cliCommand = clice::Argument { .parent = &cli,
                                     .args  = {"-c"},
                                     .desc  = "program to execute inside the shell",
                                     .value = std::vector<std::string>{},
 };
-
 auto cliMountPoint = clice::Argument{ .parent = &cli,
                                       .args = "--mount",
                                       .desc = "path to the mount point or if already in use, reuse",
                                       .value = std::string{},
 };
-
 auto cliStack = clice::Argument{ .parent = &cli,
                                  .args   = "--stack",
                                  .desc   = "Will add paths to PATH instead of overwritting, allows stacking behavior",
 };
-
 auto cliAllowOther = clice::Argument{ .parent = &cli,
                                 .args = "--allow_other",
                                 .desc = "Allows other users to access to the mounted paths",
@@ -57,7 +53,6 @@ void app() {
     storeInit();
     auto storePath = getSlixConfigPath() / "stores";
 
-
     auto mountPoint = [&]() -> std::string {
         if (cliMountPoint) {
             if (!std::filesystem::exists(*cliMountPoint)) {
@@ -69,7 +64,23 @@ void app() {
         }
     }();
 
-    auto handle = mountAndWait(clice::argv0, mountPoint, *cli, cliVerbose, cliAllowOther);
+    auto requestedPackages = std::vector<std::string>{};
+    for (auto i : *cli) {
+        // Check if it is a environment file
+        if (exists(std::filesystem::path(i))) {
+            i = absolute(std::filesystem::path(i)).string();
+            auto packages = readSlixEnvFile(i);
+            for (auto p : packages) {
+                requestedPackages.push_back(p);
+            }
+        } else { // Other wise assume its a package name
+            requestedPackages.push_back(i);
+        }
+    }
+
+
+
+    auto handle = mountAndWait(clice::argv0, mountPoint, requestedPackages, cliVerbose, cliAllowOther);
 
     auto stores = Stores{storePath};
     auto installedPackagePaths = std::unordered_map<std::string, std::filesystem::path>{};
@@ -80,7 +91,7 @@ void app() {
     auto cmd = [&]() -> std::vector<std::string> {
         if (cliCommand->size()) return *cliCommand;
         auto fullNames = std::vector<std::string>{};
-        for (auto name : *cli) {
+        for (auto name : requestedPackages) {
             auto names = stores.findExactName(name);
             bool added = false;
             for (auto n : names) {

@@ -75,6 +75,7 @@ void app() {
         // Load all stores, and check if it is already available
         auto stores = Stores{storePath};
         for (auto i : *cliInstall) {
+            // Check if it is a environment file
             if (exists(std::filesystem::path(i))) {
                 i = absolute(std::filesystem::path(i)).string();
                 auto envs = stores.getInstalledEnvironmentFiles();
@@ -87,9 +88,7 @@ void app() {
                     stores.install(p, /*.explictMarked=*/false, i);
                 }
                 fmt::print("environment {} installed\n", i);
-
-
-            } else {
+            } else { // Other wise assume its a package name
                 bool newlyInstalled = stores.install(i, /*.explictMarked=*/true, "");
                 if (!newlyInstalled) {
                     fmt::print("package {} was already installed\n", i);
