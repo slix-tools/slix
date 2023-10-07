@@ -20,7 +20,6 @@ namespace {
 void app();
 auto cli = clice::Argument{ .args   = {"-S", "sync"},
                             .desc   = "synchronize packages and environments",
-                            .value  = std::vector<std::string>{},
                             .cb     = app,
 };
 
@@ -122,6 +121,31 @@ void app() {
                             }
                         }
 
+                    }
+                }
+            }
+            if (names.empty()) {
+                auto names = stores.findWithPrefix(name);
+                for (auto n : names) {
+                    if (cliBrief) {
+                        fmt::print("{}\n", n);
+                    } else {
+                        fmt::print("{}{}\n", n, stores.isInstalled(n)?" (installed)":"");
+                    }
+                    if (cliDependencies) {
+                        auto [knownList, installedStore] = stores.findExactPattern(n);
+                        if (installedStore) {
+                            auto deps = installedStore->loadPackageIndex().findDependencies(n);
+                            for (auto d : std::set<std::string>{deps.begin(), deps.end()}) {
+                                if (cliBrief) {
+                                    fmt::print("{}\n", d);
+                                } else {
+                                    bool isInstalled = stores.isInstalled(d);
+                                    fmt::print("- {}{}\n", d, isInstalled?" (installed)":"");
+                                }
+                            }
+
+                        }
                     }
                 }
             }

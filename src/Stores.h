@@ -279,17 +279,6 @@ public:
 
         auto result = std::vector<std::string>{};
 
-        // check if any store is already has it on the shelf
-//        for (auto& store : stores) {
-//            if (auto iter = store.state.packages.find(name); iter != store.state.packages.end()) {
-//                return
-//                if (iter->second.count(pattern) > 0) {
-//                    std::get<1>(result) = &store;
-//                    break;
-//                }
-//            }
-//        }
-
         // check if any store could order it
         for (auto& store : stores) {
             auto index = store.loadPackageIndex();
@@ -300,6 +289,24 @@ public:
         }
         return result;
     }
+
+    auto findWithPrefix(std::string name) -> std::vector<std::string> {
+        auto result = std::vector<std::string>{};
+
+        // check if any store could order it
+        for (auto& store : stores) {
+            auto index = store.loadPackageIndex();
+            for (auto [key, value] : index.packages) {
+                if (key.starts_with(name)) {
+                    auto info = value.back();
+                    result.emplace_back(fmt::format("{}@{}#{}", key, info.version, info.hash));
+                }
+            }
+        }
+        return result;
+    }
+
+
 
 };
 
