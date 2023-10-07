@@ -226,7 +226,6 @@ public:
         bool removed = false;
 
         for (auto const& p : dependencies) {
-            // !TODO Probably need a few more checks here
             packagesMarked[p].dependencyCount -= 1;
             if (explicitMarked && packagesMarked[p].explicitMarked) {
                 packagesMarked[p].explicitMarked = false;
@@ -252,11 +251,11 @@ public:
      * \param file:           package is required by environmentFile
      */
     auto listPackagesFromEnvironment(std::string environmentFile) const {
-        auto packages = std::vector<std::string>{};
+        auto packages = std::unordered_set<std::string>{};
         // list all packages from this environment
         for (auto const& [name, markings] : packagesMarked) {
             if (markings.environmentFiles.contains(environmentFile)) {
-                packages.push_back(name);
+                packages.insert(name);
             }
         }
         return packages;

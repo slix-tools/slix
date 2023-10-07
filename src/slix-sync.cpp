@@ -84,15 +84,35 @@ void app() {
             if (exists(std::filesystem::path(i))) {
                 i = absolute(std::filesystem::path(i)).string();
                 auto envs = stores.getInstalledEnvironmentFiles();
+                // upgrade environment
                 if (envs.contains(i)) {
-                    fmt::print("environment {} was already installed\n", i);
-                    continue;
+                    auto installedPackages = stores.listPackagesFromEnvironment(i);
+                    auto packages          = readSlixEnvFile(i);
+                    bool upgraded = false;
+                    for (auto p : packages) {
+                        if (installedPackages.contains(p)) {
+                            installedPackages.erase(p);
+                        } else {
+                            stores.install(p, i);
+                            upgraded = true;
+                        }
+                    }
+                    for (auto p : installedPackages) {
+                        upgraded = true;
+                        stores.remove(p, i);
+                    }
+                    if (upgraded) {
+                        fmt::print("environment {} was installed, applied upgrades\n", i);
+                    } else {
+                        fmt::print("environment {} was installed, nothing to do\n", i);
+                    }
+                } else { // install new environment
+                    auto packages = readSlixEnvFile(i);
+                    for (auto p : packages) {
+                        stores.install(p, i);
+                    }
+                    fmt::print("environment {} installed\n", i);
                 }
-                auto packages = readSlixEnvFile(i);
-                for (auto p : packages) {
-                    stores.install(p, i);
-                }
-                fmt::print("environment {} installed\n", i);
             } else { // Otherwise assume its a package name
                 bool newlyInstalled = stores.install(i, "");
                 if (!newlyInstalled) {
