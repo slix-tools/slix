@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 S. G. Gottlieb <info.simon@gottliebtfreitag.de>
+// SPDX-License-Identifier: AGPL-3.0-only
+
 #include "App.h"
 #include "MyFuse.h"
 #include "slix.h"

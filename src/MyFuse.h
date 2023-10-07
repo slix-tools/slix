@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2023 S. G. Gottlieb <info.simon@gottliebtfreitag.de>
+// SPDX-License-Identifier: AGPL-3.0-only
 #pragma once
 #define FUSE_USE_VERSION 31
 

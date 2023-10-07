@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 S. G. Gottlieb <info.simon@gottliebtfreitag.de>
+// SPDX-License-Identifier: AGPL-3.0-only
+
 #include <clice/clice.h>
 #include <fmt/format.h>
 

@@ -1,3 +1,5 @@
+<!-- SPDX-FileCopyrightText: 2023 S. G. Gottlieb <info.simon@gottliebtfreitag.de> -->
+<!-- SPDX-License-Identifier: CC0-1.0 -->
 # Slix
 
 User space package manager based on fuse for linux.

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2023 S. G. Gottlieb <info.simon@gottliebtfreitag.de>
+# SPDX-License-Identifier: CC0-1.0
+
 dir="$(dirname $(realpath "$0"))"
 export SLIX_ROOT="${dir}/rootfs"
 export PATH="${dir}/rootfs/usr/bin:${PATH}"
