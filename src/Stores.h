@@ -163,11 +163,11 @@ public:
 
     /** Will install the package matching the pattern (latest, or specific version if fully qualified)
      *
-     * \param pattern:        full qualified name
-     * \param explicitMarked: was this file explicit marked by user?
-     * \param file:           package is required by environmentFile
+     * \param pattern:        full qualified name or exact name
+     * \param file:           package is required by environmentFile (empty if not belonging to any environment file)
      */
-    bool install(std::string pattern, bool explicitMarked, std::string file) {
+    bool install(std::string pattern, std::string file) {
+        bool explicitMarked = file.empty();
         auto posAt   = pattern.rfind('@');
         auto posHash = pattern.rfind('#');
         if (posAt == std::string::npos || posHash == std::string::npos) {
@@ -190,16 +190,76 @@ public:
             }
             installedPackages.insert(p);
             packagesMarked[p].dependencyCount += 1;
-            if (explicitMarked and p == pattern and !packagesMarked[p].explicitMarked) {
-                packagesMarked[p].explicitMarked = true;
-                newlyInstalled = true;
-            }
-            if (!file.empty()) {
+            if (p == pattern) {
                 packagesMarked[p].environmentFiles.insert(file);
+                if (explicitMarked and !packagesMarked[p].explicitMarked) {
+                    packagesMarked[p].explicitMarked = true;
+                    newlyInstalled = true;
+                }
             }
         }
         store->state.save(getSlixStatePath() / store->name / "state.yaml");
         return newlyInstalled;
+    }
+
+    /** Will remove the package matching the pattern (latest, or specific version if fully qualified)
+     *
+     * \param pattern:        full qualified name or exact name
+     * \param file:           package is required by environmentFile (empty if not belonging to any environment file)
+     */
+    bool remove(std::string pattern, std::string file) {
+        bool explicitMarked = file.empty();
+        auto posAt   = pattern.rfind('@');
+        auto posHash = pattern.rfind('#');
+        if (posAt == std::string::npos || posHash == std::string::npos) {
+            auto names = findExactName(pattern);
+            if (names.empty()) throw error_fmt{"could not find any package with name {}\n", pattern};
+            if (names.size() > 1) throw error_fmt{"find multiple packages which could be the latest one, with name {}\n", pattern};
+            pattern = names[0];
+            posAt   = pattern.rfind('@');
+            posHash = pattern.rfind('#');
+        }
+
+        //Dependency also
+        auto [store, dependencies] = getPackageAndDependencies(pattern);
+
+        bool removed = false;
+
+        for (auto const& p : dependencies) {
+            // !TODO Probably need a few more checks here
+            packagesMarked[p].dependencyCount -= 1;
+            if (explicitMarked && packagesMarked[p].explicitMarked) {
+                packagesMarked[p].explicitMarked = false;
+                removed = true;
+            }
+            if (!explicitMarked) {
+                packagesMarked[p].environmentFiles.erase(file);
+            }
+            if (packagesMarked[p].dependencyCount == 0) {
+                store->remove(p);
+                installedPackages.erase(p);
+                packagesMarked.erase(p);
+            }
+
+        }
+        store->state.save(getSlixStatePath() / store->name / "state.yaml");
+        return removed;
+    }
+
+
+    /** List All files from environment file
+     *
+     * \param file:           package is required by environmentFile
+     */
+    auto listPackagesFromEnvironment(std::string environmentFile) const {
+        auto packages = std::vector<std::string>{};
+        // list all packages from this environment
+        for (auto const& [name, markings] : packagesMarked) {
+            if (markings.environmentFiles.contains(environmentFile)) {
+                packages.push_back(name);
+            }
+        }
+        return packages;
     }
 
     /** Get explicit installed packages

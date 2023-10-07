@@ -30,7 +30,13 @@ auto cliUpdate = clice::Argument{ .parent = &cli,
 
 auto cliInstall = clice::Argument{ .parent = &cli,
                                    .args   = {"--install", "-i"},
-                                   .desc   = "downloads a package",
+                                   .desc   = "downloads and install packages or environment files",
+                                   .value  = std::vector<std::string>{},
+};
+
+auto cliRemove = clice::Argument{ .parent = &cli,
+                                   .args   = {"--remove", "-r"},
+                                   .desc   = "remove packages or environment files",
                                    .value  = std::vector<std::string>{},
 };
 
@@ -84,11 +90,11 @@ void app() {
                 }
                 auto packages = readSlixEnvFile(i);
                 for (auto p : packages) {
-                    stores.install(p, /*.explictMarked=*/false, i);
+                    stores.install(p, i);
                 }
                 fmt::print("environment {} installed\n", i);
-            } else { // Other wise assume its a package name
-                bool newlyInstalled = stores.install(i, /*.explictMarked=*/true, "");
+            } else { // Otherwise assume its a package name
+                bool newlyInstalled = stores.install(i, "");
                 if (!newlyInstalled) {
                     fmt::print("package {} was already installed\n", i);
                 } else {
@@ -97,6 +103,34 @@ void app() {
             }
         }
         stores.save(getSlixStatePath() / "stores.yaml");
+    } else if (cliRemove) {
+        // Load all stores, and check if it is already available
+        auto stores = Stores{storePath};
+        for (auto i : *cliRemove) {
+            // Check if it is a environment file
+            if (exists(std::filesystem::path(i))) {
+                i = absolute(std::filesystem::path(i)).string();
+                auto envs = stores.getInstalledEnvironmentFiles();
+                if (!envs.contains(i)) {
+                    fmt::print("environment {} not installed\n", i);
+                    continue;
+                }
+                auto packages = readSlixEnvFile(i);
+                for (auto p : packages) {
+                    stores.remove(p, i);
+                }
+                fmt::print("environment {} removed\n", i);
+            } else { // Otherwise assume its a package name
+                bool removed = stores.remove(i, "");
+                if (!removed) {
+                    fmt::print("package {} not installed\n", i);
+                } else {
+                    fmt::print("package {} removed\n", i);
+                }
+            }
+        }
+        stores.save(getSlixStatePath() / "stores.yaml");
+
     } else if (cliSearch) {
         // Go through store by store and search
         auto stores = Stores{storePath};

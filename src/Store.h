@@ -210,4 +210,26 @@ public:
             throw error_fmt{"unknown store type {}", config.type};
         }
     }
+
+    void remove(std::string const& pattern) {
+        auto posAt   = pattern.rfind('@');
+        auto posHash = pattern.rfind('#');
+        if (posAt   == std::string::npos || posHash == std::string::npos) throw error_fmt{"invalid package name format {}", pattern};
+        auto name    = pattern.substr(0, posAt);
+        auto version = pattern.substr(posAt+1, posHash-posAt-1);
+        auto hash    = pattern.substr(posHash+1);
+
+
+        StoreConfig::Source const& source = config.source;
+        if (config.type == "local") {
+            auto package = pattern + ".gar";
+            auto dest = getSlixStatePath() / this->name / "packages" / package;
+
+            std::filesystem::remove(dest);
+            state.packages[name].erase(pattern);
+        } else {
+            throw error_fmt{"unknown store type {}", config.type};
+        }
+    }
+
 };
