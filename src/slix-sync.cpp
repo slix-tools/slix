@@ -224,20 +224,6 @@ void app() {
                 fmt::print("- {}\n", f);
             }
         }
-
-    } else {
-        auto packageNames = std::set<std::string>{};
-        for (auto const& e : std::filesystem::directory_iterator{storePath}) {
-            auto store = Store{e.path()};
-            fmt::print("store at: {}\n", getSlixStatePath() / store.name);
-            auto index = store.loadPackageIndex();
-            auto const& s = store.config.source;
-            fmt::print("  - {} ({}) available packages {}\n", s.url, s.type, index.packages.size());
-            for (auto const& [key, list] : index.packages) {
-                packageNames.insert(key);
-            }
-        }
-        fmt::print("  total packages {}\n", packageNames.size());
     }
 }
 }
