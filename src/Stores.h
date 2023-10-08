@@ -365,6 +365,34 @@ public:
         return result;
     }
 
+    /** Finds an updated packages
+     *
+     * \param pattern: fully qualified name
+     */
+    auto findUpgrade(std::string pattern) const -> std::string {
+        // Split of name
+        auto posAt   = pattern.rfind('@');
+        auto posHash = pattern.rfind('#');
+        if (posAt   == std::string::npos
+            || posHash == std::string::npos
+            || posAt > posHash) {
+            throw error_fmt{"package {} is invalid format", pattern};
+        }
+        auto name    = pattern.substr(0, posAt);
+        auto version = pattern.substr(posAt+1, posHash-posAt-1);
+        auto hash    = pattern.substr(posHash+1);
+
+        for (auto& store : stores) {
+            auto index = store.loadPackageIndex();
+            if (auto iter = index.packages.find(name); iter != index.packages.end()) {
+                auto info = iter->second.back();
+                return fmt::format("{}@{}#{}", name, info.version, info.hash);
+            }
+        }
+
+        throw error_fmt{"Can't find any package with name {}", pattern};
+    }
+
 
 
 };

@@ -25,7 +25,8 @@ auto cli = clice::Argument{ .args   = {"-S", "sync"},
 
 auto cliUpdate = clice::Argument{ .parent = &cli,
                                   .args   = {"--update", "-u"},
-                                  .desc   = "update the sources of all stores"
+                                  .desc   = "update the sources of all stores, if environment file is given replace packages with newer packages",
+                                  .value  = std::vector<std::string>{},
 };
 
 auto cliInstall = clice::Argument{ .parent = &cli,
@@ -71,12 +72,40 @@ void app() {
     auto storePath = getSlixConfigPath() / "stores";
 
     if (cliUpdate) {
+        if (cliUpdate->empty())
         for (auto const& e : std::filesystem::directory_iterator{storePath}) {
             auto store = Store{e.path()};
             fmt::print("updating store {} ({})\n", store.name, getSlixStatePath() / store.name);
             store.update();
         }
-    } else if (cliInstall) {
+        auto stores = Stores{storePath};
+        for (auto i : *cliUpdate) {
+            if (exists(std::filesystem::path(i))) {
+                i = absolute(std::filesystem::path(i)).string();
+                auto envFile  = readSlixEnvFile(i);
+                auto packages = envFile.packages;
+                bool changes = false;
+                for (auto p : packages) {
+                    auto newName = stores.findUpgrade(p);
+                    if (newName != p) {
+                        envFile.replacePackage(p, newName);
+                        fmt::print("upgrading {} -> {}\n", p, newName);
+                        changes = true;
+                    }
+                }
+                if (changes) {
+                    saveSlixEnvFile(envFile, i);
+                } else {
+                    fmt::print("nothing upgraded in {}\n", i);
+                }
+
+            } else {
+                throw error_fmt{"invalid environment file {}", i};
+            }
+
+        }
+    }
+    if (cliInstall) {
         // Load all stores, and check if it is already available
         auto stores = Stores{storePath};
         for (auto i : *cliInstall) {

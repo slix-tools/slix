@@ -268,14 +268,43 @@ inline auto scanDefaultCommand(std::vector<std::string> packages, std::unordered
     throw error_fmt{"no command given"};
 }
 
+struct EnvFile {
+    std::vector<std::string> allLines;
+    std::unordered_set<std::string> packages{};
+
+    void replacePackage(std::string oldPackage, std::string newPackage) {
+        if (!packages.contains(oldPackage)) {
+            throw error_fmt{"environment file doesn't contain {}", oldPackage};
+        }
+        if (packages.contains(newPackage)) {
+            throw error_fmt{"environment file already contains {}", newPackage};
+        }
+
+        packages.erase(oldPackage);
+        packages.insert(newPackage);
+
+        for (auto & l : allLines) {
+            if (l == oldPackage) {
+                l = newPackage;
+            }
+        }
+    }
+
+    friend auto begin(EnvFile const& env) { return env.packages.begin(); }
+    friend auto begin(EnvFile& env)       { return env.packages.begin(); }
+    friend auto end(EnvFile const& env)   { return env.packages.end();   }
+    friend auto end(EnvFile& env)         { return env.packages.begin(); }
+};
+
 /*
  * Reads a slix environment
- *  - removes first line (the shebang)
+ *
+ *  - trimes lines
  */
-inline auto readSlixEnvFile(std::filesystem::path const& script) -> std::vector<std::string> {
-    auto results = std::vector<std::string>{};
+inline auto readSlixEnvFile(std::filesystem::path const& script) -> EnvFile {
     auto ifs = std::ifstream{script};
     auto line = std::string{};
+    auto envFile = EnvFile{};
     while (std::getline(ifs, line)) {
         // remove leading white spaces
         while (!line.empty() && line[0] == ' ') {
@@ -285,13 +314,23 @@ inline auto readSlixEnvFile(std::filesystem::path const& script) -> std::vector<
         while (!line.empty() && line.back() == ' ') {
             line = line.substr(0, line.size()-1);
         }
-        // ignore lines that are empty
-        if (line.empty()) continue;
+        // add trimed lines
+        envFile.allLines.push_back(line);
 
-        // ignore lines starting with '#'
-        if (line[0] == '#') continue;
-
-        results.push_back(line);
+        // add package line
+        if (!line.empty() && line[0] != '#') {
+            envFile.packages.insert(line);
+        }
     }
-    return results;
+    return envFile;
+}
+
+/*
+ * Saves a slix environment
+ */
+inline void saveSlixEnvFile(EnvFile const& env, std::filesystem::path const& script) {
+    auto ofs = std::ofstream{script};
+    for (auto const& l : env.allLines) {
+        fmt::print(ofs, "{}\n", l);
+    }
 }

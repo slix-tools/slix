@@ -81,7 +81,8 @@ void app() {
         }
         script = getEnvironmentFile();
     }
-    auto packages = readSlixEnvFile(script);
+    auto envFile = readSlixEnvFile(script);
+    auto packages = std::vector<std::string>(envFile.packages.begin(), envFile.packages.end());
 
     auto mountPoint = [&]() -> std::string {
         if (cliMountPoint) {
