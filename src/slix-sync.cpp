@@ -51,7 +51,7 @@ auto cliDependencies = clice::Argument{ .parent = &cliSearch,
                                         .desc   = "list all dependencies",
 };
 auto cliBrief = clice::Argument{ .parent = &cliSearch,
-                                 .args   = {"-b"},
+                                 .args   = {"--brief", "-b"},
                                  .desc   = "keep output brief"
 };
 
