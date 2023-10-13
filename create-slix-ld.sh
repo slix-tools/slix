@@ -3,9 +3,9 @@
 # SPDX-License-Identifier: CC0-1.0
 
 
-version=0.0.2
+version=0.0.3
 
-./build.sh
+BUILD_TYPE=release ./build.sh
 mkdir -p slix-ld-package/rootfs/usr/{bin,lib}
 mkdir -p slix-ld-package/meta
 cp build/bin/slix-ld slix-ld-package/rootfs/usr/bin
