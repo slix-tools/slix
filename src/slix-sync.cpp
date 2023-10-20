@@ -250,6 +250,7 @@ void app() {
         if (installedEnvironmentFiles.size() > 0) {
             fmt::print("environment files:\n");
             for (auto f : installedEnvironmentFiles) {
+                if (f.empty()) continue;
                 fmt::print("- {}\n", f);
             }
         }
