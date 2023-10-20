@@ -17,4 +17,4 @@ echo "wrapper around dynamic linking for slix environments" > slix-ld-package/me
 
 ./build/bin/slix archive --input slix-ld-package --output slix-ld.gar
 hash=$(sha256sum slix-ld.gar | awk '{print $1}')
-mv slix-ld.gar slix-ld@${version}\#${hash}.gar
+cp slix-ld.gar slix-ld@${version}\#${hash}.gar
