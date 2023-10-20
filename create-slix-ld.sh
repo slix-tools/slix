@@ -16,3 +16,5 @@ echo "${version}" > slix-ld-package/meta/version.txt
 echo "wrapper around dynamic linking for slix environments" > slix-ld-package/meta/description.txt
 
 ./build/bin/slix archive --input slix-ld-package --output slix-ld.gar
+hash=$(sha256sum slix-ld.gar | awk '{print $1}')
+mv slix-ld.gar slix-ld@${version}\#${hash}.gar
