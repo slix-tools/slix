@@ -32,7 +32,9 @@ struct PackageIndex {
      }
 
     void storeFile(std::filesystem::path path) {
-        std::filesystem::create_directories(path.parent_path());
+        if (!path.parent_path().empty()) {
+            std::filesystem::create_directories(path.parent_path());
+        }
 
         auto yaml = YAML::Node{};
         yaml["version"] = 2;
