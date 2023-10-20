@@ -293,7 +293,7 @@ struct EnvFile {
     friend auto begin(EnvFile const& env) { return env.packages.begin(); }
     friend auto begin(EnvFile& env)       { return env.packages.begin(); }
     friend auto end(EnvFile const& env)   { return env.packages.end();   }
-    friend auto end(EnvFile& env)         { return env.packages.begin(); }
+    friend auto end(EnvFile& env)         { return env.packages.end(); }
 };
 
 /*
