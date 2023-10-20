@@ -47,7 +47,9 @@ struct Stores {
                 }
             }
         }
-        load(getSlixStatePath() / "stores.yaml");
+        if (exists(getSlixStatePath() / "stores.yaml")) {
+            load(getSlixStatePath() / "stores.yaml");
+        }
     }
 
     /** \brief Save this store config into a file.
