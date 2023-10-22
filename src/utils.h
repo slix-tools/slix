@@ -13,6 +13,13 @@
 #include <string_view>
 #include <unordered_set>
 
+inline auto getPATH(std::string _default = "") -> std::string {
+    auto ptr = std::getenv("PATH");
+    if (!ptr) return _default;
+    return ptr;
+}
+
+
 /**
  * Path to the ~/.cache/slix path
  */
@@ -69,19 +76,6 @@ inline auto getEnvironmentFile() -> std::filesystem::path {
     auto ptr = std::getenv("SLIX_ENVIRONMENT");
     if (ptr) return ptr;
     return "";
-}
-
-
-
-/**
- * get path to upstream directories
- */
-inline auto getUpstreamsPath() -> std::filesystem::path {
-    auto path = getSlixConfigPath() / "upstreams";
-    if (!exists(path)) {
-        throw std::runtime_error{"missing path: " + path.string()};
-    }
-    return path;
 }
 
 /** returns a list of installed packages - including the trailing .gar

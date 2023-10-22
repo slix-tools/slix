@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2023 S. G. Gottlieb <info.simon@gottliebtfreitag.de>
 // SPDX-License-Identifier: AGPL-3.0-only
 
-#include "App.h"
 #include "slix.h"
 #include "utils.h"
 #include "PackageIndex.h"
@@ -63,11 +62,6 @@ auto cliList = clice::Argument{ .parent = &cli,
 
 
 void app() {
-    auto app = App {
-        .verbose = cliVerbose,
-    };
-    app.init();
-
     storeInit();
     auto storePath = getSlixConfigPath() / "stores";
 

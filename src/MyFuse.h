@@ -3,12 +3,15 @@
 #pragma once
 #define FUSE_USE_VERSION 31
 
+#include "GarFuse.h"
+
 #include <filesystem>
 #include <fuse.h>
 #include <fuse/fuse_lowlevel.h>
 #include <iostream>
-#include <unordered_set>
 #include <signal.h>
+#include <unordered_set>
+#include <vector>
 
 
 struct MyFuse {
