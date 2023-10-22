@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2023 S. G. Gottlieb <info.simon@gottliebtfreitag.de>
 // SPDX-License-Identifier: AGPL-3.0-only
 
-#include "App.h"
 #include "slix.h"
 #include "utils.h"
 #include "PackageIndex.h"
@@ -63,20 +62,16 @@ auto cliList = clice::Argument{ .parent = &cli,
 
 
 void app() {
-    auto app = App {
-        .verbose = cliVerbose,
-    };
-    app.init();
-
     storeInit();
     auto storePath = getSlixConfigPath() / "stores";
 
     if (cliUpdate) {
-        if (cliUpdate->empty())
-        for (auto const& e : std::filesystem::directory_iterator{storePath}) {
-            auto store = Store{e.path()};
-            fmt::print("updating store {} ({})\n", store.name, getSlixStatePath() / store.name);
-            store.update();
+        if (cliUpdate->empty()) {
+            for (auto const& e : std::filesystem::directory_iterator{storePath}) {
+                auto store = Store{e.path()};
+                fmt::print("updating store {} ({})\n", store.name, getSlixStatePath() / store.name);
+                store.update();
+            }
         }
         auto stores = Stores{storePath};
         for (auto i : *cliUpdate) {

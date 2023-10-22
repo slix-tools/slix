@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2023 S. G. Gottlieb <info.simon@gottliebtfreitag.de>
 // SPDX-License-Identifier: AGPL-3.0-only
 
-#include "App.h"
 #include "GarFuse.h"
 #include "MyFuse.h"
 #include "PackageIndex.h"
@@ -56,11 +55,6 @@ void app() {
     if (!std::filesystem::exists(*cliMountPoint)) {
         std::filesystem::create_directories(*cliMountPoint);
     }
-
-    auto app = App {
-        .verbose = cliVerbose,
-    };
-    app.init();
 
     storeInit();
     auto storePath = getSlixConfigPath() / "stores";

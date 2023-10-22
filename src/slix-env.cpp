@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2023 S. G. Gottlieb <info.simon@gottliebtfreitag.de>
 // SPDX-License-Identifier: AGPL-3.0-only
 
-#include "App.h"
 #include "slix.h"
 #include "utils.h"
 
@@ -66,11 +65,6 @@ auto quoteStringIfRequired(std::string const& s) {
 }
 
 void app() {
-    auto app = App {
-        .verbose = false,
-    };
-    app.init();
-
     auto script   = *cli;
 
     // reloading environment
@@ -108,7 +102,7 @@ void app() {
     fmt::print("exec 3<> {}/slix-lock\n", quoteStringIfRequired(mountPoint));
 
 
-    auto PATH = app.getPATH();
+    auto PATH = getPATH();
     if (PATH.empty() || !cliStack) {
         PATH = mountPoint + "/usr/bin";
     } else {
