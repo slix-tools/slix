@@ -160,10 +160,23 @@ void app() {
                 for (auto i2 : installedPackages) {
                     stores.remove(i2, ai);
                 }
-            } else if (explicitInstalledPackages.contains(i)) {
-                stores.remove(i, "");
+                fmt::print("removed environment {}\n", ai);
             } else {
-                fmt::print("package/environment {} not installed\n", i);
+                auto names = stores.findExactName(i, /*.onlyNewest=*/false);
+                size_t count{};
+                if (!names.empty()) {
+                    for (auto n : names) {
+                        if (explicitInstalledPackages.contains(n)) {
+                            count += 1;
+                            stores.remove(n, "");
+                        }
+                    }
+                    if (count > 0) {
+                        fmt::print("removed {} ({} package{})\n", i, count, (count==1)?"":"s");
+                    } else {
+                        fmt::print("package {} is not installed\n", i);
+                    }
+                }
             }
         }
         stores.save(getSlixStatePath() / "stores.yaml");

@@ -328,7 +328,7 @@ public:
         return result;
     }
 
-    auto findExactName(std::string name) -> std::vector<std::string> {
+    auto findExactName(std::string name, bool onlyNewest=true) -> std::vector<std::string> {
         // Check if name is already fully qualified
         auto posAt   = name.rfind('@');
         auto posHash = name.rfind('#');
@@ -344,8 +344,14 @@ public:
         for (auto& store : stores) {
             auto index = store.loadPackageIndex();
             if (auto iter = index.packages.find(name); iter != index.packages.end()) {
-                auto info = iter->second.back();
-                result.emplace_back(fmt::format("{}@{}#{}", name, info.version, info.hash));
+                if (onlyNewest) {
+                    auto const& info = iter->second.back();
+                    result.emplace_back(fmt::format("{}@{}#{}", name, info.version, info.hash));
+                } else {
+                    for (auto const& info : iter->second) {
+                        result.emplace_back(fmt::format("{}@{}#{}", name, info.version, info.hash));
+                    }
+                }
             }
         }
         return result;
