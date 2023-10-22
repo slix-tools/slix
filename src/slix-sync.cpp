@@ -150,26 +150,32 @@ void app() {
     } else if (cliRemove) {
         // Load all stores, and check if it is already available
         auto stores = Stores{storePath};
+        auto installedEnvironmentFiles = stores.getInstalledEnvironmentFiles();
+        auto explicitInstalledPackages = stores.getExplicitInstalledPackages();
+
         for (auto i : *cliRemove) {
-            // Check if it is a environment file
-            if (exists(std::filesystem::path(i))) {
-                i = absolute(std::filesystem::path(i)).string();
-                auto envs = stores.getInstalledEnvironmentFiles();
-                if (!envs.contains(i)) {
-                    fmt::print("environment {} not installed\n", i);
-                    continue;
+            auto ai = absolute(std::filesystem::path{i});
+            if (installedEnvironmentFiles.contains(ai)) {
+                auto installedPackages = stores.listPackagesFromEnvironment(ai);
+                for (auto i2 : installedPackages) {
+                    stores.remove(i2, ai);
                 }
-                auto packages = readSlixEnvFile(i);
-                for (auto p : packages) {
-                    stores.remove(p, i);
-                }
-                fmt::print("environment {} removed\n", i);
-            } else { // Otherwise assume its a package name
-                bool removed = stores.remove(i, "");
-                if (!removed) {
-                    fmt::print("package {} not installed\n", i);
-                } else {
-                    fmt::print("package {} removed\n", i);
+                fmt::print("removed environment {}\n", ai);
+            } else {
+                auto names = stores.findExactName(i, /*.onlyNewest=*/false);
+                size_t count{};
+                if (!names.empty()) {
+                    for (auto n : names) {
+                        if (explicitInstalledPackages.contains(n)) {
+                            count += 1;
+                            stores.remove(n, "");
+                        }
+                    }
+                    if (count > 0) {
+                        fmt::print("removed {} ({} package{})\n", i, count, (count==1)?"":"s");
+                    } else {
+                        fmt::print("package {} is not installed\n", i);
+                    }
                 }
             }
         }
