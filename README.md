@@ -1,5 +1,7 @@
-<!-- SPDX-FileCopyrightText: 2023 S. G. Gottlieb <info.simon@gottliebtfreitag.de> -->
-<!-- SPDX-License-Identifier: CC0-1.0 -->
+<!--
+    SPDX-FileCopyrightText: 2023 S. G. Gottlieb <info.simon@gottliebtfreitag.de>
+    SPDX-License-Identifier: CC-BY-4.0
+-->
 # Slix
 
 User space package manager based on fuse for linux.
@@ -23,6 +25,8 @@ If slix is not installed on your system, you can install it into your user space
 3. Call `source slix-bootstrap-pkg/activate` for temporally activating slix environment
    or add it to your .bashrc for permanent availability
 
+# Insides
+Info on [slix-ld](docs/slix-ld.md)
 
 # How to build your own slix package
 
