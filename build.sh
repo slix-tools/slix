@@ -15,21 +15,21 @@ else
 fi
 cmds="archive env index-add index-init index-info index-push index-squash mount run store sync"
 objs=""
-#for cmd in ${cmds}; do
-#    g++ ${FLAGS} -c src/slix-${cmd}.cpp -o build/obj/slix-${cmd}.cpp.o
-#    objs="${objs} build/obj/slix-${cmd}.cpp.o"
-#done
-#g++ ${FLAGS} -c src/slix.cpp -o build/obj/slix.cpp.o
-#
-#g++ build/obj/slix.cpp.o \
-#    ${objs} \
-#    -lcurl -lfuse -lfmt -lcrypto -lyaml-cpp \
-#    -o build/bin/slix
+for cmd in ${cmds}; do
+    ccache g++ ${FLAGS} -c src/slix-${cmd}.cpp -o build/obj/slix-${cmd}.cpp.o
+    objs="${objs} build/obj/slix-${cmd}.cpp.o"
+done
+ccache g++ ${FLAGS} -c src/slix.cpp -o build/obj/slix.cpp.o
+
+ccache g++ build/obj/slix.cpp.o \
+    ${objs} \
+    -lcurl -lfuse -lfmt -lcrypto -lyaml-cpp \
+    -o build/bin/slix
 
 ln -fs slix build/bin/slix-env
 
-g++ ${FLAGS} -c src/slix-ld.cpp -o build/obj/slix-ld.cpp.o -static
-g++ build/obj/slix-ld.cpp.o -o build/bin/slix-ld -static
+ccache g++ ${FLAGS} -c src/slix-ld.cpp -o build/obj/slix-ld.cpp.o -static
+ccache g++ build/obj/slix-ld.cpp.o -o build/bin/slix-ld -static
 
 if [ "${1:-}" == "install" ] || [ "${1:-}" == "--install" ]; then
     cp -a build/bin/{slix,slix-env} ${HOME}/.local/bin
