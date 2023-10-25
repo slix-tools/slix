@@ -98,9 +98,11 @@ int main(int argc, char** argv) {
 
         argv0 = argv[1];
         auto path = std::filesystem::path{argv[2]};
-        auto parent = path.parent_path().string();
-        executableName = (inputPath.parent_path() / parent / (std::string{".slix-ld-"} + path.filename().string())).lexically_normal();
-
+        auto parent = path.parent_path();
+        if (parent.is_absolute()) {
+            parent = parent.lexically_relative("/");
+        }
+        executableName = (slixRoot / parent / (std::string{".slix-ld-"} + path.filename().string())).lexically_normal();
         trailingArgs = {argv+3, argv+argc};
 
     } else {
