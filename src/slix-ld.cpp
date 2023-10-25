@@ -97,8 +97,9 @@ int main(int argc, char** argv) {
         }
 
         argv0 = argv[1];
-        executableName = argv[2];
-
+        auto path = std::filesystem::path{argv[2]};
+        auto parent = path.parent_path().string();
+        executableName = (inputPath.parent_path() / parent / (std::string{".slix-ld-"} + path.filename().string())).lexically_normal();
 
         trailingArgs = {argv+3, argv+argc};
 
@@ -117,10 +118,9 @@ int main(int argc, char** argv) {
         }
 
         argv0 = inputPath.filename().string();
+        executableName = (inputPath.parent_path() / (std::string{".slix-ld-"} + argv0)).lexically_normal();
         trailingArgs = {argv+1, argv+argc};
     }
-
-    executableName = (inputPath.parent_path() / (".slix-ld-" + argv0)).lexically_normal();
 
 
     auto argv2 = std::vector<char const*>{};
