@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 
-version=0.0.3
+version=0.0.4
 
 BUILD_TYPE=release ./build.sh
 mkdir -p slix-ld-package/rootfs/usr/{bin,lib}
