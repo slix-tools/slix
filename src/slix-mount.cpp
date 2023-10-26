@@ -102,15 +102,6 @@ void app() {
         std::filesystem::remove(tempMount);
     } else {
         static auto onExit = std::function<void(int)>{};
-        if (cliFork) {
-            if (fork() != 0) return;
-            std::signal(SIGHUP, [](int) {}); // ignore hangup signal
-            std::signal(SIGINT, [](int) {});
-        } else {
-            std::signal(SIGINT, [](int signal) { if (onExit) { onExit(signal); } });
-        }
-        std::signal(SIGUSR1, [](int signal) { if (onExit) { onExit(signal); } });
-
 
         auto fuseFS = MyFuse{std::move(layers), cliVerbose, *cliMountPoint, cliAllowOther};
         std::jthread thread;
@@ -120,6 +111,20 @@ void app() {
                 fuseFS.close();
             }};
         };
+
+        if (cliFork) {
+            if (fork() != 0) {
+                fuseFS.mountPoint = "";
+                return;
+            }
+            std::signal(SIGHUP, [](int) {}); // ignore hangup signal
+            std::signal(SIGINT, [](int) {});
+        } else {
+            std::signal(SIGINT, [](int signal) { if (onExit) { onExit(signal); } });
+        }
+        std::signal(SIGUSR1, [](int signal) { if (onExit) { onExit(signal); } });
+        std::this_thread::sleep_for(std::chrono::milliseconds{5000});
+
         fuseFS.loop();
     }
 }

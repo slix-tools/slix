@@ -113,7 +113,9 @@ struct MyFuse {
 
     ~MyFuse() {
         fuse_destroy(fusePtr);
-        remove(mountPoint);
+        if (!mountPoint.empty()) {
+            remove(mountPoint);
+        }
     }
 
     void close() {
