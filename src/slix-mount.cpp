@@ -123,7 +123,6 @@ void app() {
             std::signal(SIGINT, [](int signal) { if (onExit) { onExit(signal); } });
         }
         std::signal(SIGUSR1, [](int signal) { if (onExit) { onExit(signal); } });
-        std::this_thread::sleep_for(std::chrono::milliseconds{5000});
 
         fuseFS.loop();
     }
