@@ -200,7 +200,7 @@ inline void execute(std::vector<std::string> const& _argv, std::map<std::string,
     execvpe(argv[0], (char**)argv.data(), (char**)envp.data());
 }
 
-inline auto mountAndWaitCall(std::filesystem::path argv0, std::filesystem::path mountPoint, std::vector<std::string> const& packages, bool verbose, bool allowOther) -> std::vector<std::string> {
+inline auto mountAndWaitCall(std::filesystem::path argv0, std::filesystem::path mountPoint, std::vector<std::string> const& packages, bool verbose, std::vector<std::string> const& mountOptions) -> std::vector<std::string> {
     auto call = std::vector<std::string>{};
     if (!std::filesystem::exists(std::filesystem::path{mountPoint} / "slix-lock")) {
         if (verbose) {
@@ -217,19 +217,26 @@ inline auto mountAndWaitCall(std::filesystem::path argv0, std::filesystem::path 
         call.push_back("--fork");
         call.push_back("--mount");
         call.push_back(mountPoint.string());
-        if (allowOther) {
-            call.push_back("--allow_other");
-        }
+//        if (allowOther) {
+//            call.push_back("--allow_other");
+//        }
         call.push_back("-p");
         for (auto p : packages) {
             call.push_back(p);
+        }
+        if (!mountOptions.empty()) {
+            call.push_back("--options");
+            call.push_back("--");
+            for (auto const& o : mountOptions) {
+                call.push_back(o);
+            }
         }
     }
     return call;
 }
 
-inline auto mountAndWait(std::filesystem::path argv0, std::filesystem::path mountPoint, std::vector<std::string> const& packages, bool verbose, bool allowOther) -> std::ifstream {
-    auto call = mountAndWaitCall(argv0, mountPoint, packages, verbose, allowOther);
+inline auto mountAndWait(std::filesystem::path argv0, std::filesystem::path mountPoint, std::vector<std::string> const& packages, bool verbose, std::vector<std::string> const& mountOptions) -> std::ifstream {
+    auto call = mountAndWaitCall(argv0, mountPoint, packages, verbose, mountOptions);
     if (!call.empty()) {
         auto callStr = fmt::format("{}", fmt::join(call, " "));
         if (verbose) {

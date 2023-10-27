@@ -34,13 +34,16 @@ auto cliMountPoint = clice::Argument{ .parent = &cli,
                                       .desc = "path to the mount point or if already in use, reuse",
                                       .value = std::string{},
 };
+
+auto cliMountOptions  = clice::Argument{ .parent = &cli,
+                                         .args  = {"-o", "--options"},
+                                         .desc  = "mount options",
+                                         .value = std::vector<std::string>{},
+};
+
 auto cliStack = clice::Argument{ .parent = &cli,
                                  .args   = "--stack",
                                  .desc   = "Will add paths to PATH instead of overwritting, allows stacking behavior",
-};
-auto cliAllowOther = clice::Argument{ .parent = &cli,
-                                .args = "--allow_other",
-                                .desc = "Allows other users to access to the mounted paths",
 };
 
 void app() {
@@ -74,7 +77,7 @@ void app() {
 
 
 
-    auto handle = mountAndWait(clice::argv0, mountPoint, requestedPackages, cliVerbose, cliAllowOther);
+    auto handle = mountAndWait(clice::argv0, mountPoint, requestedPackages, cliVerbose, *cliMountOptions);
 
     auto stores = Stores{storePath};
     auto installedPackagePaths = std::unordered_map<std::string, std::filesystem::path>{};

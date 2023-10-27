@@ -36,14 +36,16 @@ auto cliMountPoint = clice::Argument{ .parent = &cli,
                                       .value = std::string{},
                                       .tags = {"required"},
 };
+
+auto cliMountOptions  = clice::Argument{ .parent = &cli,
+                                         .args  = {"-o", "--options"},
+                                         .desc  = "mount options",
+                                         .value = std::vector<std::string>{},
+};
+
 auto cliFork = clice::Argument{ .parent = &cli,
                                 .args = "--fork",
                                 .desc = "fork program to run in the background (also ignores SIGHUP)",
-};
-
-auto cliAllowOther = clice::Argument{ .parent = &cli,
-                                .args = "--allow_other",
-                                .desc = "Allows other users to access to the mounted paths",
 };
 
 auto cliUnpack = clice::Argument{ .parent = &cli,
@@ -90,7 +92,7 @@ void app() {
     if (cliUnpack) {
         auto tempMount = *cliMountPoint + "/slix-temporary-mount-fs";
         std::filesystem::create_directories(tempMount);
-        auto fuseFS = MyFuse{std::move(layers), cliVerbose, tempMount, cliAllowOther};
+        auto fuseFS = MyFuse{std::move(layers), cliVerbose, tempMount, *cliMountOptions};
         auto thread = std::jthread{[&]() {
             fuseFS.loop();
         }};
@@ -103,7 +105,7 @@ void app() {
     } else {
         static auto onExit = std::function<void(int)>{};
 
-        auto fuseFS = MyFuse{std::move(layers), cliVerbose, *cliMountPoint, cliAllowOther};
+        auto fuseFS = MyFuse{std::move(layers), cliVerbose, *cliMountPoint, *cliMountOptions};
         std::jthread thread;
         onExit = [&](int) {
             thread = std::jthread{[&]() {

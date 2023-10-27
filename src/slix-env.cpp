@@ -31,9 +31,10 @@ auto cliMountPoint = clice::Argument{ .parent = &cli,
                                       .desc = "path to the mount point",
                                       .value = std::string{},
 };
-auto cliAllowOther = clice::Argument{ .parent = &cli,
-                                .args = "--allow_other",
-                                .desc = "Allows other users to access to the mounted paths",
+auto cliMountOptions  = clice::Argument{ .parent = &cli,
+                                         .args  = {"-o", "--options"},
+                                         .desc  = "mount options",
+                                         .value = std::vector<std::string>{},
 };
 
 auto escapeString(std::string const& s) {
@@ -88,7 +89,7 @@ void app() {
             return create_temp_dir().string();
         }
     }();
-    auto call = mountAndWaitCall(clice::argv0, mountPoint, packages, false, cliAllowOther);
+    auto call = mountAndWaitCall(clice::argv0, mountPoint, packages, false, *cliMountOptions);
     while (std::filesystem::is_symlink(call[0]) and std::filesystem::path{call[0]}.filename() != "slix") {
         auto ncall = std::filesystem::read_symlink(call[0]);
         if (std::filesystem::path{ncall}.is_relative()) {

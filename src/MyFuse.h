@@ -6,8 +6,9 @@
 #include "GarFuse.h"
 
 #include <filesystem>
-#include <fuse.h>
-#include <fuse/fuse_lowlevel.h>
+#include <fuse3/fuse.h>
+//#include <fuse/fuse_lowlevel.h>
+//#include <fuse/fuse_common.h>
 #include <iostream>
 #include <signal.h>
 #include <unordered_set>
@@ -16,7 +17,6 @@
 
 struct MyFuse {
     bool tearDownMountPoint{}; // remember if mount point had to be created by this class
-    fuse_chan* channel {nullptr};
     fuse*      fusePtr {nullptr};
     std::filesystem::path mountPoint;
 
@@ -24,36 +24,32 @@ struct MyFuse {
     size_t connectedClients{};
     bool verbose;
 
-    MyFuse(std::vector<GarFuse> nodes_, bool _verbose, std::filesystem::path _mountPoint, bool _allowOtherUsers)
+    MyFuse(std::vector<GarFuse> nodes_, bool _verbose, std::filesystem::path _mountPoint, std::vector<std::string> options)
         : mountPoint{_mountPoint}
         , nodes{std::move(nodes_)}
         , verbose{_verbose} {
         if (verbose) {
             std::cout << "creating mount point at " << mountPoint << "\n";
         }
-        {
-            fuse_args args = FUSE_ARGS_INIT(0, nullptr);
+        fuse_args args = FUSE_ARGS_INIT(0, nullptr);
 
-            for (auto a : {"", "-oauto_unmount"}) {
-                fuse_opt_add_arg(&args, a);
+        for (auto const& s : options) {
+            fuse_opt_add_arg(&args, s.c_str());
+            if (_verbose) {
+                fmt::print("add mount option: {}\n", s);
             }
-            if (_allowOtherUsers) {
-                fuse_opt_add_arg(&args, "-oallow_other");
-            }
-            channel = fuse_mount(mountPoint.c_str(), &args);
-            fuse_opt_free_args(&args);
         }
-        if (not channel) {
-            throw std::runtime_error{"cannot mount"};
+        if (_verbose) {
+            fuse_lib_help(&args);
         }
         auto foperations = fuse_operations {
-            .getattr  = [](char const* path, struct stat* stbuf) {
+            .getattr  = [](char const* path, struct stat* stbuf, fuse_file_info* fi) {
                 if (path == std::string_view{"/slix-lock"}) {
                     stbuf->st_nlink = 0;
                     stbuf->st_mode = S_IFREG;
                     stbuf->st_size = 0;
                     if (self().verbose) {
-                        std::cout << "gettattr " << "\n";
+                        std::cout << "gettattr " << path << "\n";
                     }
                     return 0;
                 }
@@ -65,9 +61,9 @@ struct MyFuse {
             .unlink   = [](char const* path) { return self().unlink_callback(path); },
             .rmdir    = [](char const* path) { return self().rmdir_callback(path); },
             .symlink  = [](char const* path, char const* target) { return self().symlink_callback(path, target); },
-            .rename   = [](char const* path, char const* target) { return self().rename_callback(path, target); },
-            .chmod    = [](char const* path, mode_t m) { return self().chmod_callback(path, m); },
-            .chown    = [](char const* path, uid_t uid, gid_t gid) { return self().chown_callback(path, uid, gid); },
+            .rename   = [](char const* path, char const* target, unsigned int flags) { return self().rename_callback(path, target); },
+            .chmod    = [](char const* path, mode_t m, fuse_file_info*) { return self().chmod_callback(path, m); },
+            .chown    = [](char const* path, uid_t uid, gid_t gid, fuse_file_info*) { return self().chown_callback(path, uid, gid); },
 //            .truncate = [](char const* path, off_t offset) -> int { std::cout << "truncate " << path << " " << offset << "\n"; return 0; },
             .open     = [](char const* path, fuse_file_info* fi) {
                 if (path == std::string_view{"/slix-lock"}) {
@@ -95,20 +91,26 @@ struct MyFuse {
                 }
                 return self().release_callback(path, fi);
             },
-            .readdir  = [](char const* path, void* buf, fuse_fill_dir_t filler, off_t, fuse_file_info*) {
+            .readdir  = [](char const* path, void* buf, fuse_fill_dir_t filler, off_t, fuse_file_info*, fuse_readdir_flags) {
                 if (path == std::string_view{"/"}) {
-                    filler(buf, "slix-lock", nullptr, 0);
+                    filler(buf, "slix-lock", nullptr, 0, {});
                 }
                 return self().readdir_callback(path, buf, filler);
             },
             .lock     = [](char const* path, fuse_file_info* fi, int cmd, flock* l) { return self().lock_callback(path, fi, cmd, l); },
-            .utimens  = [](char const* path, struct timespec const tv[2]) { return self().utimens_callback(path, tv); }
+            .utimens  = [](char const* path, struct timespec const tv[2], fuse_file_info*) { return self().utimens_callback(path, tv); }
             //.access   = [](char const* path, int mask) { std::cout << "access: " << path << "\n"; if (auto res = access(path, mask); res == -1) return -errno; return 0; },
 //            .read_buf = [](char const* path, fuse_bufvec** bufp, size_t size, off_t offset, fuse_file_info* fi) { return self().read_buf_callback(path, bufp, size, offset, fi); },
 //            .lseek    = [](char const* path, off_t off, int whence) -> off_t { std::cout << "lseek not implemented: " << path << "\n"; return 0; },
 
         };
-        fusePtr = fuse_new(channel, nullptr, &foperations, sizeof(foperations), this);
+        fusePtr = fuse_new(&args, &foperations, sizeof(foperations), this);
+        int r = fuse_mount(fusePtr, mountPoint.c_str());
+        if (r != 0) {
+            throw std::runtime_error{"failed mounting"};
+        }
+        //fuse_opt_free_args(&args);
+
     }
 
     ~MyFuse() {
@@ -120,7 +122,7 @@ struct MyFuse {
 
     void close() {
         fuse_exit(fusePtr);
-        fuse_unmount(mountPoint.c_str(), channel);
+        fuse_unmount(fusePtr);
     }
 
     void loop() {

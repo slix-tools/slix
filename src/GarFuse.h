@@ -3,15 +3,12 @@
 #pragma once
 #define FUSE_USE_VERSION 31
 
-
-
 #include "fsx/Reader.h"
 
 #include <filesystem>
 #include <fmt/format.h>
 #include <fmt/std.h>
-#include <fuse.h>
-#include <fuse/fuse_lowlevel.h>
+#include <fuse3/fuse.h>
 #include <ranges>
 #include <unordered_map>
 #include <unordered_set>
@@ -189,7 +186,7 @@ struct GarFuse {
                 if (!satisfiedFiles.contains(child_name)) {
                     satisfiedFiles.emplace(child_name);
                     //std::cout << " - child: " << child_name << "\n";
-                    filler(buf, child_name.c_str(), nullptr, 0);
+                    filler(buf, child_name.c_str(), nullptr, 0, {});
                 }
             }
         }

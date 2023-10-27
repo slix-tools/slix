@@ -23,7 +23,7 @@ ccache g++ ${FLAGS} -c src/slix.cpp -o build/obj/slix.cpp.o
 
 ccache g++ build/obj/slix.cpp.o \
     ${objs} \
-    -lcurl -lfuse -lfmt -lcrypto -lyaml-cpp \
+    -lcurl -lfuse3 -lfmt -lcrypto -lyaml-cpp \
     -o build/bin/slix
 
 ln -fs slix build/bin/slix-env
