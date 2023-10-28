@@ -63,7 +63,7 @@ void app() {
 
     // Go through store by store and list gather all requested packages and their dependencies
     // Paths to the required packages
-    auto requiredPackages = std::unordered_set<std::filesystem::path>{};
+    auto requiredPackages = std::unordered_map<std::string, std::filesystem::path>{};
 
     auto stores = Stores{storePath};
     for (auto name : *cliPackages) {
@@ -76,16 +76,41 @@ void app() {
         auto n = names[0];
         auto [knownList, installedStore] = stores.findExactPattern(n);
         if (!installedStore) {
-            throw error_fmt{"package {} not installed", n};
-        }
-        requiredPackages.insert(installedStore->getPackagePath(n));
-        for (auto d : installedStore->loadPackageIndex().findDependencies(n)) {
-            requiredPackages.insert(installedStore->getPackagePath(d));
+            // load Gar from file
+            if (exists(std::filesystem::path(n)) && n.ends_with(".gar")) {
+                auto package_name = std::filesystem::path{n}.stem().string();
+                if (auto iter = requiredPackages.find(package_name); iter != requiredPackages.end()) {
+                    continue;
+                }
+                requiredPackages[package_name] = n;
+                auto gar = GarFuse{std::filesystem::path{n}, cliVerbose};
+                for (auto d : gar.dependencies) {
+                    if (requiredPackages.find(d) != requiredPackages.end()) {
+                        continue;
+                    }
+                    auto [knownList, installedStore] = stores.findExactPattern(d);
+                    if (!installedStore) {
+                        throw error_fmt{"package {} not installed, required for {}", d, n};
+                    }
+                    requiredPackages[d] = installedStore->getPackagePath(d);
+                }
+            } else {
+                throw error_fmt{"package {} not installed", n};
+            }
+        } else {
+            // Loading Gar from store
+            if (requiredPackages.find(n) != requiredPackages.end()) {
+                continue;
+            }
+            requiredPackages[n] = installedStore->getPackagePath(n);
+            for (auto d : installedStore->loadPackageIndex().findDependencies(n)) {
+                requiredPackages[d] = installedStore->getPackagePath(d);
+            }
         }
     }
 
     auto layers = std::vector<GarFuse>{};
-    for (auto const& path : requiredPackages) {
+    for (auto const& [name, path] : requiredPackages) {
         layers.emplace_back(path, cliVerbose);
     }
 

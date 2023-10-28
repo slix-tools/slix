@@ -63,12 +63,19 @@ void app() {
 
     auto requestedPackages = std::vector<std::string>{};
     for (auto i : *cli) {
-        // Check if it is a environment file
+        // Check if it a file
         if (exists(std::filesystem::path(i))) {
-            i = absolute(std::filesystem::path(i)).string();
-            auto packages = readSlixEnvFile(i);
-            for (auto p : packages) {
-                requestedPackages.push_back(p);
+            // Check if it is package on the command line
+            if (i.ends_with(".gar")) {
+                requestedPackages.push_back(absolute(std::filesystem::path(i)).string());
+
+            // Assuming it is an environment file
+            } else {
+                i = absolute(std::filesystem::path(i)).string();
+                auto packages = readSlixEnvFile(i);
+                for (auto p : packages) {
+                    requestedPackages.push_back(p);
+                }
             }
         } else { // Other wise assume its a package name
             requestedPackages.push_back(i);
