@@ -291,7 +291,7 @@ public:
     /** finds an exact packages
      *
      * returns first: a list of potential stores
-     *         secnod: a store that has it installed
+     *         second: a store that has it installed
      */
     auto findExactPattern(std::string pattern) {
         auto result = std::tuple<std::vector<Store*>, Store*>{};

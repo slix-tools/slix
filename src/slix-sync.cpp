@@ -185,7 +185,7 @@ void app() {
         // Go through store by store and search
         auto stores = Stores{storePath};
         for (auto name : *cliSearch) {
-            auto names = stores.findExactName(name);
+            auto names = stores.findExactName(name, !cliVerbose);
             for (auto n : names) {
                 if (cliBrief) {
                     fmt::print("{}\n", n);
