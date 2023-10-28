@@ -32,6 +32,7 @@ struct MyFuse {
             std::cout << "creating mount point at " << mountPoint << "\n";
         }
         fuse_args args = FUSE_ARGS_INIT(0, nullptr);
+        fuse_opt_add_arg(&args, "");
 
         for (auto const& s : options) {
             fuse_opt_add_arg(&args, s.c_str());
