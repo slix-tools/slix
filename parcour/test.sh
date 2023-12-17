@@ -51,5 +51,6 @@ usr/bin/slix-ld ./bin/g++ /usr/bin/g++ --para1 test > tmp/output.txt
 cmp tmp/expected.txt tmp/output.txt
 
 
+rm usr/bin/slix-ld
 rm -rf tmp
 echo "success"
