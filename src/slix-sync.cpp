@@ -69,7 +69,9 @@ void app() {
         if (cliUpdate->empty()) {
             for (auto const& e : std::filesystem::directory_iterator{storePath}) {
                 auto store = Store{e.path()};
-                fmt::print("updating store {} ({})\n", store.name, getSlixStatePath() / store.name);
+                if (cliVerbose) {
+                    fmt::print("updating store {} ({})\n", store.name, getSlixStatePath() / store.name);
+                }
                 store.update();
             }
         }

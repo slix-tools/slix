@@ -154,12 +154,12 @@ public:
     void update() {
         auto const& s = config.source;
         if (s.type == "https") {
-            fmt::print("  - https://{} ({})\n", s.url, s.type);
+//            fmt::print("  - https://{} ({})\n", s.url, s.type);
 
             auto source = fmt::format("https://{}", s.url / "index.db");
             auto dest   = getSlixCachePath() / "stores" / name / fmt::format("index.db");
             std::filesystem::create_directories(std::filesystem::path{dest}.parent_path());
-            downloadFile(source, dest, false);
+            downloadFile("", fmt::format("Updating Index {}", name), source, dest, false);
 
         } else {
             throw error_fmt{"unknown source type {}", s.type};
@@ -199,7 +199,8 @@ public:
             std::filesystem::create_directories(dest.parent_path());
 
             if (source.type == "https") {
-                downloadFile(encodeURL(src), dest, verbose);
+                downloadFile("", fmt::format("Downloading {}", name), encodeURL(src), dest, verbose);
+
             } else {
                 throw error_fmt{"unknown source type {}", source.type};
             }

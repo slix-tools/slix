@@ -7,11 +7,114 @@
 #include <cstdlib>
 #include <curl/curl.h>
 #include <filesystem>
+#include <indicators/cursor_control.hpp>
+#include <indicators/progress_bar.hpp>
+#include <indicators/block_progress_bar.hpp>
 #include <random>
 #include <ranges>
 #include <string>
 #include <string_view>
+#include <sys/ioctl.h>
+#include <unistd.h>
 #include <unordered_set>
+
+inline auto isTerminal(size_t t) {
+    return isatty(t);
+}
+
+inline auto isStdInTerminal() { return isTerminal(STDIN_FILENO); }
+inline auto isStdOutTerminal() { return isTerminal(STDOUT_FILENO); }
+inline auto isStdErrTerminal() { return isTerminal(STDERR_FILENO); }
+
+struct CurlDownload {
+    CURL* curl{nullptr};
+    FILE* file{nullptr};
+
+    using DownloadCB = std::function<void(curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal , curl_off_t ulnow)>;
+    static size_t download_progress_callback(void* clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow) {
+        auto funcP = static_cast<DownloadCB*>(clientp);
+        (*funcP)(dltotal, dlnow, ultotal, ulnow);
+        return 0;
+    }
+    DownloadCB downloadCB;
+
+    template <typename ...Args>
+    void setOption(CURLoption option, Args&&... args) {
+        if (curl_easy_setopt(curl, option, std::forward<Args>(args)...) != CURLE_OK) {
+            throw std::runtime_error{"setting curl option failed " + std::to_string(option)};
+        }
+    }
+
+
+    CurlDownload(std::string src, std::filesystem::path dest, DownloadCB cb)
+        : curl{curl_easy_init()}
+        , file{fopen(dest.c_str(), "w")}
+        , downloadCB{cb}
+    {
+        if (!curl) throw std::runtime_error{"setup of libcurl failed"};
+        if (!file) throw std::runtime_error{"file couldn't be opened"};
+
+        setOption(CURLOPT_XFERINFODATA, &cb);
+        setOption(CURLOPT_XFERINFOFUNCTION, download_progress_callback);
+        setOption(CURLOPT_NOPROGRESS, 0);
+        setOption(CURLOPT_URL, src.c_str());
+        setOption(CURLOPT_WRITEDATA, file);
+
+    }
+    void perform() {
+        if (curl_easy_perform(curl) != CURLE_OK) {
+            throw std::runtime_error{"download could not be finished"};
+        }
+    }
+
+    ~CurlDownload() {
+        if (!curl) return;
+
+        fclose(file);
+        setOption(CURLOPT_NOPROGRESS, 1);
+        curl_easy_cleanup(curl);
+    }
+};
+
+struct Bar {
+    indicators::ProgressBar bar;
+    size_t progress{0};
+
+    Bar(std::string prefix, std::string postfix)
+        : bar {
+            indicators::option::BarWidth{50},
+            indicators::option::Start{"["},
+            indicators::option::Fill{"="},
+            indicators::option::Lead{">"},
+            indicators::option::Remainder{" "},
+            indicators::option::End{"]"},
+            indicators::option::PrefixText{prefix},
+            indicators::option::PostfixText{postfix},
+            indicators::option::ForegroundColor{indicators::Color::green},
+            indicators::option::FontStyles{std::vector<indicators::FontStyle>{indicators::FontStyle::bold}},
+        }
+    {
+        if (isStdOutTerminal()) {
+             indicators::show_console_cursor(false);
+        }
+    }
+    void setProgress(int p) {
+        if (progress == 100) return;
+        progress = p;
+        if (isStdOutTerminal()) {
+            bar.set_progress(progress);
+        } else {
+            if (progress == 100) {
+                bar.set_progress(progress);
+            }
+        }
+    }
+    ~Bar() {
+        if (isStdOutTerminal()) {
+             indicators::show_console_cursor(true);
+        }
+    }
+};
 
 inline auto getPATH(std::string _default = "") -> std::string {
     auto ptr = std::getenv("PATH");
@@ -113,32 +216,14 @@ inline void unpackZstFile(std::filesystem::path file) {
 }
 
 //!TODO curl is not cleanup properly on failure (how does anyone does this without RAII?)
-inline void downloadFile(std::string url, std::filesystem::path dest, bool verbose) {
-    CURL* curl = curl_easy_init();
-    if (!curl) throw std::runtime_error{"setup of libcurl failed"};
-    auto file = fopen(dest.c_str(), "w");
-    if (file == nullptr) {
-        throw std::runtime_error{"file couldn't be opened"};
-    }
-    if (curl_easy_setopt(curl, CURLOPT_URL, url.c_str()) != CURLE_OK) {
-        throw std::runtime_error{"setting option CURLOPT_URL failed"};
-    }
-    if (curl_easy_setopt(curl, CURLOPT_WRITEDATA, file) != CURLE_OK) {
-        throw std::runtime_error{"setting option CURLOPT_WRITEDATA failed"};
-    }
-    if (curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0) != CURLE_OK) {
-        throw std::runtime_error{"setting option CURLOPT_NOPROGRESS failed"};
-    }
-    if (curl_easy_perform(curl) != CURLE_OK) {
-        throw std::runtime_error{"download could not be finished"};
-    }
-    if (fclose(file) != 0) {
-        throw std::runtime_error{"file couldn't be closed"};
-    }
-    if (verbose) {
-        fmt::print("downloading {} -> {}\n", url, dest);
-    }
-    curl_easy_cleanup(curl);
+inline void downloadFile(std::string action, std::string postfix, std::string url, std::filesystem::path dest, bool verbose) {
+    auto bar = Bar{action, postfix};
+    auto cb = CurlDownload::DownloadCB{[&](curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow) {
+        if (dltotal == 0) bar.setProgress(0);
+        else bar.setProgress(dlnow * 100 / dltotal);
+    }};
+    auto curl = CurlDownload{url, dest, cb};
+    curl.perform();
 }
 
 //!TODO requires much better url encoding
