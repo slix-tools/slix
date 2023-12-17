@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: 2023 S. G. Gottlieb <info.simon@gottliebtfreitag.de>
+# SPDX-License-Identifier: CC0-1.0
+
+bash@5.1.016-4#847341746c9a6fa96b43d98c2af701bf8e080a431917e0cdc7550ccab0fa4bdc
+coreutils@9.4-2#27b546e8ff82ffe1d6f981d621556ed93f012e44aadd3cd002fbc1802278e4f3
+reuse@2.1.0-1#e65814d005b0db165bb87e6a171e6fcbf34ba2ddca63e48cab5472c31b822259
