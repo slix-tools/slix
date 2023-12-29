@@ -194,28 +194,34 @@ void app() {
     } else if (cliSearch) {
         // Go through store by store and search
         auto stores = Stores{storePath};
+
+        auto allreadyPrinted = std::unordered_set<std::string>{};
+
+        auto printEntry = [&](std::string packageName) {
+            if (allreadyPrinted.contains(packageName)) return;
+            allreadyPrinted.insert(packageName);
+            if (cliBrief) {
+                fmt::print("{}\n", packageName);
+            } else {
+                bool isInstalled = stores.isInstalled(packageName);
+                fmt::print("- {}{}\n", packageName, isInstalled?" (installed)":"");
+            }
+        };
+
         for (auto name : *cliSearch) {
             auto names = stores.findExactName(name, !cliVerbose);
             for (auto n : names) {
-                if (cliBrief) {
-                    fmt::print("{}\n", n);
-                } else {
-                    fmt::print("{}{}\n", n, stores.isInstalled(n)?" (installed)":"");
-                }
                 if (cliDependencies) {
                     auto [knownList, installedStore] = stores.findExactPattern(n);
                     if (installedStore) {
                         auto deps = installedStore->loadPackageIndex().findDependencies(n);
                         for (auto d : std::set<std::string>{deps.begin(), deps.end()}) {
-                            if (cliBrief) {
-                                fmt::print("{}\n", d);
-                            } else {
-                                bool isInstalled = stores.isInstalled(d);
-                                fmt::print("- {}{}\n", d, isInstalled?" (installed)":"");
-                            }
+                            printEntry(d);
                         }
 
                     }
+                } else {
+                    printEntry(n);
                 }
             }
             if (names.empty()) {
