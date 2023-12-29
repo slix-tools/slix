@@ -25,6 +25,7 @@ int main(int argc, char** argv) {
         }
     } catch (std::exception const& e) {
         fmt::print(stderr, "error: {}\n", e.what());
+        return 1;
     }
     return 0;
 }

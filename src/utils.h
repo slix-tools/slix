@@ -328,7 +328,7 @@ inline auto mountAndWait(std::filesystem::path argv0, std::filesystem::path moun
             fmt::print("call mount: `{}`\n", callStr);
         }
         auto ret = std::system(callStr.c_str());
-        if (ret != 0 || WIFEXITED(ret) != 0) {
+        if (WIFSIGNALED(ret) || (WIFEXITED(ret) && WEXITSTATUS(ret) != 0)) {
             throw error_fmt{"error running {}", callStr};
         }
     }
