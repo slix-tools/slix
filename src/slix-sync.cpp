@@ -22,11 +22,17 @@ auto cli = clice::Argument{ .args   = {"-S", "sync"},
                             .cb     = app,
 };
 
+auto cliRefreshIndex = clice::Argument{ .parent = &cli,
+                                       .args   = {"--refresh", "-y"},
+                                       .desc   = "refresh the upstream list of packages",
+};
+
 auto cliUpdate = clice::Argument{ .parent = &cli,
                                   .args   = {"--update", "-u"},
-                                  .desc   = "update the sources of all stores, if environment file is given replace packages with newer packages",
+                                  .desc   = "update explicit installed packages, if environment file is given replace packages with newer packages",
                                   .value  = std::vector<std::string>{},
 };
+
 
 auto cliInstall = clice::Argument{ .parent = &cli,
                                    .args   = {"--install", "-i"},
@@ -65,16 +71,18 @@ void app() {
     storeInit();
     auto storePath = getSlixConfigPath() / "stores";
 
-    if (cliUpdate) {
-        if (cliUpdate->empty()) {
-            for (auto const& e : std::filesystem::directory_iterator{storePath}) {
-                auto store = Store{e.path()};
-                if (cliVerbose) {
-                    fmt::print("updating store {} ({})\n", store.name, getSlixStatePath() / store.name);
-                }
-                store.update();
+    if (cliRefreshIndex) {
+        for (auto const& e : std::filesystem::directory_iterator{storePath}) {
+            auto store = Store{e.path()};
+            if (cliVerbose) {
+                fmt::print("refresh store {} ({})\n", store.name, getSlixStatePath() / store.name);
             }
+            store.update();
         }
+    }
+
+
+    if (cliUpdate) {
         auto stores = Stores{storePath};
         for (auto i : *cliUpdate) {
             if (exists(std::filesystem::path(i))) {
@@ -99,9 +107,9 @@ void app() {
             } else {
                 throw error_fmt{"invalid environment file {}", i};
             }
-
         }
     }
+
     if (cliInstall) {
         // Load all stores, and check if it is already available
         auto stores = Stores{storePath};
