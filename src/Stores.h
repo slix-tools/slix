@@ -328,7 +328,55 @@ public:
         return result;
     }
 
+    /**
+     * Expects a name: either "gcc13" or "storeName/gcc13"
+     *
+     * returns a full qualified package "gcc13@1.2.3#1234" or empty string
+     */
+    auto findNewestPackageByName(std::string name) -> std::tuple<std::string, std::string> {
+        auto result = std::string{};
+        auto resStoreName = std::string{};
+        auto checkAndAddResult = [&](std::string storeName, std::string name, std::string version, std::string hash) {
+            auto n = fmt::format("{}@{}#{}", name, version, hash);
+            if (!result.empty() and n != result) {
+                throw error_fmt{"Found at least two different newest versions {}/{} and {}/{}", resStoreName, result, storeName, n};
+            }
+            result = n;
+            resStoreName = storeName;
+        };
+
+        auto storeName = std::string{};
+        if (auto pos = name.find('/'); pos != std::string::npos) {
+            storeName = name.substr(0, pos);
+            name = name.substr(pos+1);
+        }
+
+        // check if any store could order it
+        for (auto& store : stores) {
+            if (!storeName.empty() && store.name != storeName) continue;
+
+            auto index = store.loadPackageIndex();
+            if (auto iter = index.packages.find(name); iter != index.packages.end()) {
+                auto const& info = iter->second.back();
+                checkAndAddResult(store.name, name, info.version, info.hash);
+            }
+        }
+
+        return {resStoreName, result};
+    }
+
+    /**
+     * Expects a name: either "gcc13" or "storeName/gcc13"
+     *
+     * returns a full qualified package "gcc13@1.2.3#1234" or empty string
+     */
     auto findExactName(std::string name, bool onlyNewest=true) -> std::vector<std::string> {
+        auto storeName = std::string{};
+        if (auto pos = name.find('/'); pos != std::string::npos) {
+            storeName = name.substr(0, pos);
+            name = name.substr(pos+1);
+        }
+
         // Check if name is already fully qualified
         auto posAt   = name.rfind('@');
         auto posHash = name.rfind('#');
@@ -342,6 +390,7 @@ public:
 
         // check if any store could order it
         for (auto& store : stores) {
+            if (!storeName.empty() && store.name != storeName) continue;
             auto index = store.loadPackageIndex();
             if (auto iter = index.packages.find(name); iter != index.packages.end()) {
                 if (onlyNewest) {

@@ -67,13 +67,12 @@ void app() {
 
     auto stores = Stores{storePath};
     for (auto name : *cliPackages) {
-        auto names = stores.findExactName(name);
-        if (names.size() == 0) {
+        auto [store, names] = stores.findNewestPackageByName(name);
+        if (names.empty()) {
             throw error_fmt{"package {} not found", name};
-        } else if (names.size() > 1) {
-            throw error_fmt{"multiple packages with name {} found: {}", name, fmt::join(names, ", ")};
         }
-        auto n = names[0];
+        name = names;
+        auto n = names;
         auto [knownList, installedStore] = stores.findExactPattern(n);
         if (!installedStore) {
             // load Gar from file
