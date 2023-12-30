@@ -29,14 +29,37 @@ void app() {
     auto packageNames = std::set<std::string>{};
     for (auto const& e : std::filesystem::directory_iterator{storePath}) {
         auto store = Store{e.path()};
-        fmt::print("store at: {}\n", getSlixStatePath() / store.name);
         auto index = store.loadPackageIndex();
         auto const& s = store.config.source;
-        fmt::print("  - {} ({}) available packages {}\n", s.url, s.type, index.packages.size());
-        for (auto const& [key, list] : index.packages) {
-            packageNames.insert(key);
+
+        size_t packageCt{};
+        size_t uniqPackageCt{};
+        size_t packageCtInstalled{};
+        size_t uniqPackageCtInstalled{};
+
+        for (auto const& [name, infos] : index.packages) {
+            packageCt += infos.size();
+            uniqPackageCt += 1;
+
+            bool added = false;
+            for (auto const& info : infos) {
+                if (store.state.isInstalled(fmt::format("{}@{}#{}", name, info.version, info.hash))) {
+                    packageCtInstalled += 1;
+                    added = true;
+                }
+            }
+            if (added) {
+                uniqPackageCtInstalled += 1;
+            }
         }
+        fmt::print("  - name: {}\n", store.name);
+        fmt::print("    path: {}\n", getSlixStatePath() / store.name);
+        fmt::print("    url: {}\n", s.url);
+        fmt::print("    url_type: {}\n", s.type);
+        fmt::print("    available_packages: {}\n", packageCt);
+        fmt::print("    uniq_available_packages: {}\n", uniqPackageCt);
+        fmt::print("    installed_available_packages: {}\n", packageCtInstalled);
+        fmt::print("    installed_uniq_available_packages: {}\n", uniqPackageCtInstalled);
     }
-    fmt::print("  total packages {}\n", packageNames.size());
 }
 }
