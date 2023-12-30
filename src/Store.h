@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <fmt/format.h>
 #include <fstream>
+#include <iostream>
 #include <string>
 #include <vector>
 #include <yaml-cpp/yaml.h>
@@ -145,8 +146,18 @@ struct Store {
     Store(std::filesystem::path path) {
         name = path.stem();
         config.load(path);
-        state.load(getSlixStatePath() / name / "state.yaml");
+        // Create a state yaml path if not existing
+        auto stateYamlPath = getSlixStatePath() / name / "state.yaml";
+        if (!exists(stateYamlPath.parent_path())) {
+            create_directories(stateYamlPath.parent_path());
+            auto fs = std::ofstream(stateYamlPath);
+            fs << "version: 1\n";
+            fs << "packages: {}\n";
+        }
+        state.load(stateYamlPath);
     }
+    auto operator=(Store&&) -> Store& = default;
+    auto operator=(Store const&) -> Store& = delete;
 
 public:
     /** \brief download stores newest file
@@ -166,7 +177,7 @@ public:
         }
     }
 
-    auto loadPackageIndex() const {
+    auto loadPackageIndex() const -> PackageIndex {
         auto dest   = getSlixCachePath() / "stores" / name / fmt::format("index.db");
         return PackageIndex{dest};
     }

@@ -58,6 +58,7 @@ struct PackageIndex {
         emitter << yaml;
         fmt::print(ofs, "{}", emitter.c_str());
     }
+
     void loadFile(std::filesystem::path path) {
         auto yaml = YAML::LoadFile(path);
         if (yaml["version"].as<int>() == 2) {
@@ -66,6 +67,7 @@ struct PackageIndex {
             throw error_fmt("unknown file format");
         }
     }
+
     void loadFileV2(YAML::Node yaml) {
         for (auto p : yaml["packages"]) {
             auto name = p["name"].as<std::string>();
