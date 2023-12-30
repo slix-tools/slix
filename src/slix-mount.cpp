@@ -66,43 +66,41 @@ void app() {
     auto requiredPackages = std::unordered_map<std::string, std::filesystem::path>{};
 
     auto stores = Stores{storePath};
-    for (auto name : *cliPackages) {
-        auto [store, names] = stores.findNewestPackageByName(name);
-        if (names.empty()) {
-            throw error_fmt{"package {} not found", name};
+    for (auto requested_name : *cliPackages) {
+        auto [store, name] = stores.findNewestPackageByName(requested_name, /*installed = */ true);
+        if (name.empty()) {
+            throw error_fmt{"package {} not found", requested_name};
         }
-        name = names;
-        auto n = names;
-        auto [knownList, installedStore] = stores.findExactPattern(n);
+        auto [knownList, installedStore] = stores.findExactPattern(name);
         if (!installedStore) {
             // load Gar from file
-            if (exists(std::filesystem::path(n)) && n.ends_with(".gar")) {
-                auto package_name = std::filesystem::path{n}.stem().string();
+            if (exists(std::filesystem::path(name)) && name.ends_with(".gar")) {
+                auto package_name = std::filesystem::path{name}.stem().string();
                 if (auto iter = requiredPackages.find(package_name); iter != requiredPackages.end()) {
                     continue;
                 }
-                requiredPackages[package_name] = n;
-                auto gar = GarFuse{std::filesystem::path{n}, cliVerbose};
+                requiredPackages[package_name] = name;
+                auto gar = GarFuse{std::filesystem::path{name}, cliVerbose};
                 for (auto d : gar.dependencies) {
                     if (requiredPackages.find(d) != requiredPackages.end()) {
                         continue;
                     }
                     auto [knownList, installedStore] = stores.findExactPattern(d);
                     if (!installedStore) {
-                        throw error_fmt{"package {} not installed, required for {}", d, n};
+                        throw error_fmt{"package {} not installed, required for {}", d, name};
                     }
                     requiredPackages[d] = installedStore->getPackagePath(d);
                 }
             } else {
-                throw error_fmt{"package {} not installed", n};
+                throw error_fmt{"package {}({}) not installed", requested_name, name};
             }
         } else {
             // Loading Gar from store
-            if (requiredPackages.find(n) != requiredPackages.end()) {
+            if (requiredPackages.find(name) != requiredPackages.end()) {
                 continue;
             }
-            requiredPackages[n] = installedStore->getPackagePath(n);
-            for (auto d : installedStore->loadPackageIndex().findDependencies(n)) {
+            requiredPackages[name] = installedStore->getPackagePath(name);
+            for (auto d : installedStore->loadPackageIndex().findDependencies(name)) {
                 requiredPackages[d] = installedStore->getPackagePath(d);
             }
         }

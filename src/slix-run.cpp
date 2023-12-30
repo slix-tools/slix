@@ -82,8 +82,6 @@ void app() {
         }
     }
 
-
-
     auto handle = mountAndWait(clice::argv0, mountPoint, requestedPackages, cliVerbose, *cliMountOptions);
 
     auto stores = Stores{storePath};
@@ -95,18 +93,15 @@ void app() {
     auto cmd = [&]() -> std::vector<std::string> {
         if (cliCommand->size()) return *cliCommand;
         auto fullNames = std::vector<std::string>{};
-        for (auto name : requestedPackages) {
-            auto names = stores.findExactName(name);
-            bool added = false;
-            for (auto n : names) {
-                if (stores.isInstalled(n)) {
-                    fullNames.push_back(n);
-                    added = true;
-                    break;
-                }
+        for (auto requested_name : requestedPackages) {
+            auto [store, name] = stores.findNewestPackageByName(requested_name, /*installed = */ true);
+            if (name.empty()) {
+                throw error_fmt{"package {} not found", requested_name};
             }
-            if (!added) {
-                throw error_fmt{"unknown package {}", name};
+            if (stores.isInstalled(name)) {
+                fullNames.push_back(name);
+            } else {
+                throw error_fmt{"package {} is not installed", requested_name};
             }
         }
         return scanDefaultCommand(fullNames, installedPackagePaths);

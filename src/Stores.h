@@ -333,7 +333,7 @@ public:
      *
      * returns a full qualified package "gcc13@1.2.3#1234" or empty string
      */
-    auto findNewestPackageByName(std::string name) -> std::tuple<std::string, std::string> {
+    auto findNewestPackageByName(std::string name, bool mustBeInstalled = false) -> std::tuple<std::string, std::string> {
         auto result = std::string{};
         auto resStoreName = std::string{};
         auto checkAndAddResult = [&](std::string storeName, std::string name, std::string version, std::string hash) {
@@ -357,8 +357,20 @@ public:
 
             auto index = store.loadPackageIndex();
             if (auto iter = index.packages.find(name); iter != index.packages.end()) {
-                auto const& info = iter->second.back();
-                checkAndAddResult(store.name, name, info.version, info.hash);
+                if (mustBeInstalled) {
+                    PackageIndex::Info const* info{};
+                    for (auto iter2 = iter->second.begin(); iter2 != iter->second.end(); ++iter2) {
+                        if (isInstalled(fmt::format("{}@{}#{}", name, iter2->version, iter2->hash))) {
+                            info = &*iter2;
+                        }
+                    }
+                    if (info) {
+                        checkAndAddResult(store.name, name, info->version, info->hash);
+                    }
+                } else {
+                    auto const& info = iter->second.back();
+                    checkAndAddResult(store.name, name, info.version, info.hash);
+                }
             }
         }
 
