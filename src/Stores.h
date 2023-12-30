@@ -107,6 +107,18 @@ public:
         return installedPackages.contains(pattern);
     }
 
+    /** \brief check if a non fully qualified package is installed
+     */
+    bool isAnyVersionInstalled(std::string pattern) const {
+        pattern += '@';
+        for (auto i : installedPackages) {
+            if (i.starts_with(pattern)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     auto getPackagePath(std::string fullPackageName) const -> std::filesystem::path {
         auto posAt   = fullPackageName.rfind('@');
         auto posHash = fullPackageName.rfind('#');
@@ -418,7 +430,7 @@ public:
         return result;
     }
 
-    auto findWithPrefix(std::string name) -> std::vector<std::string> {
+    auto findWithPrefix(std::string name, bool onlyNewest = true) -> std::vector<std::string> {
         auto result = std::vector<std::string>{};
 
         // check if any store could order it
@@ -426,8 +438,14 @@ public:
             auto index = store.loadPackageIndex();
             for (auto [key, value] : index.packages) {
                 if (key.starts_with(name)) {
-                    auto info = value.back();
-                    result.emplace_back(fmt::format("{}@{}#{}", key, info.version, info.hash));
+                    if (onlyNewest) {
+                        auto info = value.back();
+                        result.emplace_back(fmt::format("{}@{}#{}", key, info.version, info.hash));
+                    } else {
+                        for (auto const& info : value) {
+                            result.emplace_back(fmt::format("{}@{}#{}", key, info.version, info.hash));
+                        }
+                    }
                 }
             }
         }
